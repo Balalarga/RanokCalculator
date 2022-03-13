@@ -1,5 +1,0 @@
-args x(-1, 2), y, z;
-
-w = x + cut(3, y, 0, 1);
-
-return w - 20;
