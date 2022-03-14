@@ -1,88 +1,68 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
+#include <array>
 #include <fstream>
-#include <assert.h>
 
 
 /// Column first flat array
-template <class T>
+template <class Type, int Dimensions>
 class FlatArray
 {
 public:
-    FlatArray(const std::vector<unsigned> &dims) : _dimensions(dims)
+    FlatArray(const std::array<unsigned, Dimensions> &dims):
+        _dimensions(dims)
     {
-        long dataSize = 0;
+        long dataSize = 1;
         for (auto &i : _dimensions)
-            dataSize += i;
+            dataSize *= i;
 
         _data.resize(dataSize);
     }
-    FlatArray(const std::vector<unsigned> &dims, float initValue) : FlatArray<T>(dims)
+
+    FlatArray(const std::array<unsigned, Dimensions>& dims, float initValue):
+        FlatArray<Type, Dimensions>(dims)
     {
         for (auto &i : _data)
-            i = rand() % 100;
+            i = initValue;
     }
 
-    long Size() const { return _data.size(); }
+    inline const long& Size() const { return _data.size(); }
+    inline const unsigned& GetDimension(unsigned id) { return _dimensions[id]; }
+    inline std::array<unsigned, Dimensions>& GetDimensions() const { return _dimensions; }
 
-    unsigned GetDimension(unsigned id)
+    inline Type& operator[](long id) const { return _data[id]; }
+    Type& operator[](std::array<unsigned, Dimensions> &ids)
     {
-        return _dimensions.at(id);
-    }
-    const std::vector<unsigned> &GetDimensions() const { return _dimensions; }
-
-    T& operator[](long id)
-    {
-        return _data.at(id);
-    }
-
-    T& operator[](std::vector<unsigned> &ids)
-    {
-        assert(ids.size() == _dimensions.size());
-
         long id = 0;
         for (size_t i = 1; i < ids.size(); ++i)
-            id += _dimensions.at(_dimensions.size() - i) * ids.at(i);
+            id += _dimensions[_dimensions.size() - i] * ids[i];
 
-        return _data.at(id);
+        return _data[id];
     }
 
-    template <class _T>
-    friend std::ostream &operator<<(std::ostream &stream, const FlatArray<_T> &object)
-    {
-        for(size_t i = 0; i < object._data.size(); ++i)
-        {
-            stream << object._data[i] << " ";
-            if ((i+1) % object._dimensions[0] == 0)
-                stream << "\n";
-        }
-        return stream;
-    }
 
-    template <class _T>
-    friend std::istream &operator>>(std::istream &stream, FlatArray<_T> &object)
-    {
-        return stream;
-    }
-
-    template <class _T>
-    friend std::ofstream &operator<<(std::ofstream &stream, const FlatArray<_T> &object)
-    {
-        stream.write((const char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
-        return stream;
-    }
-
-    template <class _T>
-    friend std::ifstream &operator>>(std::ifstream &stream, FlatArray<_T> &object)
-    {
-        stream.read(object._data.begin(), object._data.size() * sizeof(object._data[0]));
-        return stream;
-    }
+    template <class _T, int _Dimensions>
+    friend std::ofstream &operator<<(std::ofstream &stream, const FlatArray<_T, _Dimensions> &object);
+    template <class _T, int _Dimensions>
+    friend std::ifstream &operator<<(std::ifstream &stream, const FlatArray<_T, _Dimensions> &object);
 
 
 private:
-    const std::vector<unsigned> _dimensions;
-    std::vector<T> _data;
+    const std::array<unsigned, Dimensions> _dimensions;
+    std::vector<Type> _data;
 };
+
+
+
+template <class Type, int Dimensions>
+std::ofstream &operator<<(std::ofstream &stream, const FlatArray<Type, Dimensions> &object)
+{
+    return stream.write((const char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
+}
+
+template <class Type, int Dimensions>
+std::ifstream &operator<<(std::ifstream &stream, const FlatArray<Type, Dimensions> &object)
+{
+    return stream.read((const char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
+}

@@ -39,16 +39,11 @@ int main(int argc, char** argv)
     string code = codeStream.str();
     codeFile.close();
 
-    FlatArray<double> array({2, 2}, 2);
+    FlatArray<double, 3> buffer({3, 2, 1});
 
-    cout << array << endl;
 
-    std::vector<unsigned> ids{0, 1};
-    cout << array[ids] << endl;
 
-    ofstream out("test.txt");
-    out << array;
-    out.close();
+
 
     return 0;
 }
