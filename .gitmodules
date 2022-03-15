@@ -4,3 +4,6 @@
 [submodule "ThirdParty/RapidJson"]
 	path = ThirdParty/RapidJson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "ThirdParty/Glm"]
+	path = ThirdParty/Glm
+	url = https://github.com/g-truc/glm.git
