@@ -14,7 +14,7 @@ struct OpenclDeviceData
     cl_command_queue command_queue;
     cl_uint          ret_num_devices;
     cl_uint          ret_num_platforms;
-    cl_int           ret;
+    cl_int           ret = CL_INVALID_CONTEXT;
     cl_program       program = 0;
     cl_kernel        kernel = 0;
     cl_uint          localGroupSize = 0;
@@ -53,10 +53,12 @@ public:
     bool Init();
     void Destroy();
 
-    void Compile(const std::string& code);
+    bool Compile(const std::string& code);
     bool Run(const std::string& functionName, const KernelArguments& args);
 
-    inline const OpenclDeviceData& GetDeviceData() const { return _deviceData; };
+    void DumpDeviceData();
+
+    inline const OpenclDeviceData& GetDeviceData() const { return _deviceData; }
 
 
 private:

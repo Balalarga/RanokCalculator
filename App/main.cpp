@@ -4,7 +4,8 @@
 #include <fstream>
 #include <cmath>
 
-#include <Ranok/Core/Utils/FlatArray.h>
+#include <Ranok/Core/OpenclCalculator.h>
+#include <Ranok/LanguageCore/Parser.h>
 
 using namespace std;
 
@@ -17,33 +18,44 @@ string CharToLower(char* rawSource)
     return source;
 }
 
-int NextErrorCode()
+int NextErrorCode(const std::string& error = "")
 {
     static int code = 0;
+    if (!error.empty())
+        cout << error << endl;
     return --code;
 }
 
 
 int main(int argc, char** argv)
 {
+    if (!OpenclSystem::Get().Init())
+        return NextErrorCode("Couldn't init opencl system");
+
     std::string codePath = "..\\..\\Examples\\NewFuncs\\sphere.txt";
 
     fstream codeFile(codePath);
     if (!codeFile)
-    {
-        cout << "Couldn't open file " << codePath << endl;
-        return NextErrorCode();
-    }
+        return NextErrorCode("Couldn't open file " + codePath);
+
     stringstream codeStream;
     codeStream << codeFile.rdbuf();
     string code = codeStream.str();
     codeFile.close();
+    
+    Parser parser;
+    Program program = parser.Parse(Lexer::CreateFrom(code));
 
-    FlatArray<double, 3> buffer({3, 2, 1});
+    Space<3> space({0, 0, 0}, {2, 2, 2}, 3);
+    OpenclCalculator<3> calculator;
 
+    if (!calculator.CalculateModel(program, space))
+        return NextErrorCode("Calculate failure");
 
+    ofstream output("output.txt");
+    output << calculator.GetModel();
+    output.close();
 
-
-
+    OpenclSystem::Get().Destroy();
     return 0;
 }

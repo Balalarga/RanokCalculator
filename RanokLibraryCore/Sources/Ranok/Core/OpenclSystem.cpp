@@ -23,7 +23,6 @@ bool OpenclSystem::Init()
         return false;
     }
 
-    std::cout << "platform_id: " << _deviceData.platform_id << "\n";
     _deviceData.ret = clGetDeviceIDs(_deviceData.platform_id,
                                      CL_DEVICE_TYPE_GPU,
                                      1,
@@ -35,12 +34,10 @@ bool OpenclSystem::Init()
         return false;
     }
 
-    std::cout << "device_id: " << _deviceData.device_id << "\n";
     _deviceData.context = clCreateContext(NULL, 1, &_deviceData.device_id,
                                           NULL,
                                           NULL,
                                           &_deviceData.ret);
-    std::cout << "context: " << _deviceData.context << "\n";
     _deviceData.command_queue = clCreateCommandQueueWithProperties(_deviceData.context,
                                                                    _deviceData.device_id,
                                                                    0,
@@ -66,10 +63,10 @@ void OpenclSystem::Destroy()
     _wasInited = false;
 }
 
-void OpenclSystem::Compile(const std::string &code)
+bool OpenclSystem::Compile(const std::string &code)
 {
     if (code.empty() || code == _code)
-        return;
+        return !code.empty();
 
     if(!_code.empty())
     {
@@ -82,10 +79,11 @@ void OpenclSystem::Compile(const std::string &code)
                                                     (const char**)&code_src,
                                                     NULL,
                                                     &_deviceData.ret);
-    if (!_deviceData.program)
+    if (_deviceData.ret != CL_SUCCESS)
     {
+        std::cout << code << "\n";
         std::cout << "Failed to create compute program!\n";
-        return;
+        return false;
     }
     _deviceData.ret = clBuildProgram(_deviceData.program,
                                      1,
@@ -95,6 +93,7 @@ void OpenclSystem::Compile(const std::string &code)
                                      NULL);
     if (_deviceData.ret != CL_SUCCESS)
     {
+        std::cout << code << "\n";
         size_t len;
         char buffer[2048];
 
@@ -108,9 +107,10 @@ void OpenclSystem::Compile(const std::string &code)
         std::cout << buffer << "\n";
         clReleaseProgram(_deviceData.program);
         _deviceData.program = 0;
-        return;
+        return false;
     }
     _code = code;
+    return true;
 }
 
 bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& args)
@@ -118,6 +118,7 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
     if (!_deviceData.program)
     {
         std::cout << "Program not compiled\n";
+        DumpDeviceData();
         return false;
     }
 
@@ -126,7 +127,8 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
                                         &_deviceData.ret);
     if (!_deviceData.kernel || _deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to create compute kernel!\n";
+        std::cout << "Failed to create compute kernel: "<<_deviceData.ret<<"\n";
+        DumpDeviceData();
         return false;
     }
 
@@ -136,17 +138,19 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
                                         args.output.TotalSize(),
                                         NULL,
                                         &_deviceData.ret);
-    if (!out_mem_obj)
+    if (_deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to allocate device memory!\n";
+        std::cout << "Failed to allocate device memory: "<<_deviceData.ret<<"\n";
+        DumpDeviceData();
         return false;
     }
 
     _deviceData.ret = clSetKernelArg(_deviceData.kernel, 0, sizeof(cl_mem), (void *)&out_mem_obj);
     if (_deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to set kernel main buffer\n";
+        std::cout << "Failed to set kernel main buffer: "<<_deviceData.ret<<"\n";
         clReleaseMemObject(out_mem_obj);
+        DumpDeviceData();
         return false;
     }
 
@@ -162,6 +166,7 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
             std::cout << "Failed to set kernel argument at ";
             std::cout << i << "\n";
             clReleaseMemObject(out_mem_obj);
+            DumpDeviceData();
             return false;
         }
     }
@@ -178,9 +183,10 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
                                                NULL);
     if (_deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to retrieve kernel work group info "
+        std::cout << "Failed to retrieve kernel work group info: "
                   << _deviceData.ret << "\n";
         clReleaseMemObject(out_mem_obj);
+        DumpDeviceData();
         return false;
     }
 
@@ -197,10 +203,11 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
                                              &local,
                                              0, NULL,
                                              NULL);
-    if (_deviceData.ret)
+    if (_deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to execute kernel\n";
+        std::cout << "Failed to execute kernel: "<<_deviceData.ret<<"\n";
         clReleaseMemObject(out_mem_obj);
+        DumpDeviceData();
         return false;
     }
     clFinish(_deviceData.command_queue);
@@ -216,11 +223,31 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
                                           NULL);
     if (_deviceData.ret != CL_SUCCESS)
     {
-        std::cout << "Failed to read output array - ";
+        std::cout << "Failed to read output array: ";
         std::cout <<_deviceData.ret << "\n";
         clReleaseMemObject(out_mem_obj);
+        DumpDeviceData();
         return false;
     }
     _deviceData.ret = clReleaseMemObject(out_mem_obj);
+
+
+    std::cout << "Global opencl size: " << global << "\n";
+
     return true;
+}
+
+void OpenclSystem::DumpDeviceData()
+{
+    std::cout << "Opencl device data:\n";
+    std::cout << "\tplatform_id: " << _deviceData.platform_id << "\n";
+    std::cout << "\tdevice_id: " << _deviceData.device_id << "\n";
+    std::cout << "\tcontext: " << _deviceData.context << "\n";
+    std::cout << "\tcommand_queue: " << _deviceData.command_queue << "\n";
+    std::cout << "\tret_num_devices: " << _deviceData.ret_num_devices << "\n";
+    std::cout << "\tret_num_platforms: " << _deviceData.ret_num_platforms << "\n";
+    std::cout << "\tret: " << _deviceData.ret << "\n";
+    std::cout << "\tprogram: " << _deviceData.program << "\n";
+    std::cout << "\tkernel: " << _deviceData.kernel << "\n";
+    std::cout << "\tlocalGroupSize: " << _deviceData.localGroupSize << "\n";
 }

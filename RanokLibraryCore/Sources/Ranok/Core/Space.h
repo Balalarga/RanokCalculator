@@ -2,55 +2,97 @@
 
 #include <glm.hpp>
 #include <array>
+#include <fstream>
 
 
 template<int Dimensions>
 class Space
 {
 public:
-    enum class ModelData
+    Space(const std::array<float, Dimensions> &centerPoint,
+          const std::array<float, Dimensions> &size,
+          const unsigned& recursiveDepth)
     {
-        Negative = -1,
-        Zero,
-        Positive
-    };
-    using MimageData = std::array<double, Dimensions+2>;
+        _size = size;
+        _centerPoint = centerPoint;
+        _partition.fill(std::pow(2, recursiveDepth));
+        UpdateStartPoint();
+    }
 
+    Space(const std::array<float, Dimensions> &centerPoint,
+          const std::array<float, Dimensions> &size,
+          const std::array<unsigned, Dimensions> partition = std::array<unsigned, Dimensions>(1))
+    {
+        _size = size;
+        _partition = partition;
+        _centerPoint = centerPoint;
+        UpdateStartPoint();
+    }
 
     Space(const Space &oth) = default;
     virtual ~Space() = default;
-
-
-    static Space FromStart(const std::array<float, Dimensions> &startPoint,
-                           const std::array<float, Dimensions> &size,
-                           const std::array<unsigned, Dimensions> partition = std::array<float, Dimensions>(1));
-    static Space FromStart(const std::array<float, Dimensions> &startPoint,
-                           const unsigned& recursiveDepth,
-                           const std::array<unsigned, Dimensions> partition = std::array<unsigned, Dimensions>(1));
-
-    static Space FromCenter(const std::array<float, Dimensions> &centerPoint,
-                            const std::array<float, Dimensions> &size,
-                            const std::array<unsigned, Dimensions> partition = std::array<unsigned, Dimensions>(1));
-    static Space FromCenter(const std::array<float, Dimensions> &centerPoint,
-                            const unsigned& recursiveDepth,
-                            const std::array<unsigned, Dimensions> partition = std::array<unsigned, Dimensions>(1));
 
 
     inline const std::array<float, Dimensions>& GetSize() const { return _size; }
     inline const std::array<float, Dimensions>& GetCentral() const { return _centerPoint; }
     inline const std::array<unsigned, Dimensions>& GetPartition() const { return _partition; }
     inline const std::array<float, Dimensions>& GetStartPoint() const { return _startPoint; }
-    inline unsigned GetTotalPartition() const { return _partition.x * _partition.y * _partition.z; }
+    inline unsigned GetTotalPartition() const { return _partition[0] * _partition[1] * _partition[2]; }
 
 
-    void SetPartition(const std::array<unsigned, Dimensions>& partition);
-    void SetPartition(const unsigned& partition);
+    std::array<float, Dimensions> GetUnitSize() const
+    {
+        std::array<float, Dimensions> unitSizes;
+
+        for (size_t i = 0; i < Dimensions; ++i)
+            unitSizes[i] = _size[i] / _partition[i];
+
+        return unitSizes;
+    }
+
+
+    void SetPartition(const std::array<unsigned, Dimensions>& partition)
+    {
+        _partition = partition;
+    }
+    void SetPartition(const unsigned& partition)
+    {
+        _partition = { partition, partition, partition };
+    }
+
+    void SetStartPoint(const std::array<float, Dimensions>& point)
+    {
+        _startPoint = point;
+        UpdateCenterPoint();
+    }
+    void SetCenterPoint(const std::array<float, Dimensions>& point)
+    {
+        _centerPoint = point;
+        UpdateStartPoint();
+    }
+    void SetSize(const std::array<float, Dimensions>& size)
+    {
+        _size = size;
+    }
+
+    template <int _Dimensions>
+    friend std::ofstream &operator<<(std::ofstream &stream, const Space<_Dimensions>& space);
+    template <int _Dimensions>
+    friend std::ifstream &operator>>(std::ifstream &stream, Space<_Dimensions>& space);
 
 
 protected:
-    Space() = default;
-    void UpdateCenterPoint();
-    void UpdateStartPoint();
+    void UpdateCenterPoint()
+    {
+        for(size_t i = 0; i < Dimensions; ++i)
+            _centerPoint[i] = _startPoint[i] + _size[i] / 2.f;
+    }
+
+    void UpdateStartPoint()
+    {
+        for(size_t i = 0; i < Dimensions; ++i)
+            _startPoint[i] = _centerPoint[i] - _size[i] / 2.f;
+    }
 
 
 private:
@@ -59,3 +101,32 @@ private:
     std::array<float, Dimensions> _startPoint;
     std::array<unsigned, Dimensions> _partition;
 };
+
+template <int Dimensions>
+std::ofstream &operator<<(std::ofstream &stream, const Space<Dimensions>& space)
+{
+    if (stream.flags() & std::ios_base::binary)
+    {
+        unsigned dims = Dimensions;
+        stream.write((char*)&dims, sizeof(dims));
+        stream.write((char*)&space._centerPoint, sizeof(space._centerPoint));
+    }
+    else
+    {
+
+    }
+    return stream;
+}
+
+
+template <int Dimensions>
+std::ifstream &operator>>(std::ifstream &stream, Space<Dimensions>& space)
+{
+    if (stream.flags() & std::ios_base::binary)
+    {
+    }
+    else
+    {
+    }
+    return stream;
+}

@@ -10,14 +10,12 @@ template <class Type, int Dimensions>
 class FlatArray
 {
 public:
+    FlatArray() = default;
+
     FlatArray(const std::array<unsigned, Dimensions> &dims):
         _dimensions(dims)
     {
-        long dataSize = 1;
-        for (auto &i : _dimensions)
-            dataSize *= i;
-
-        _data.resize(dataSize);
+        Resize(dims);
     }
 
     FlatArray(const std::array<unsigned, Dimensions>& dims, float initValue):
@@ -26,12 +24,30 @@ public:
         for (auto &i : _data)
             i = initValue;
     }
+    
+    void Resize(const std::array<unsigned, Dimensions>& dims)
+    {
+        _dimensions = dims;
+        long dataSize = 1;
+        for (auto &i : dims)
+            dataSize *= i;
 
-    inline const long& Size() const { return _data.size(); }
+        _data.resize(dataSize);
+    }
+
+    void Clear(const std::array<unsigned, Dimensions>& dims = {})
+    {
+        if (!dims.empty())
+            Resize(dims);
+        else
+            _data.clear();
+    }
+
+    inline long Size() const { return _data.size(); }
     inline const unsigned& GetDimension(unsigned id) { return _dimensions[id]; }
     inline std::array<unsigned, Dimensions>& GetDimensions() const { return _dimensions; }
 
-    inline Type& operator[](long id) const { return _data[id]; }
+    inline Type& operator[](long id) { return _data[id]; }
     Type& operator[](std::array<unsigned, Dimensions> &ids)
     {
         long id = 0;
@@ -45,11 +61,11 @@ public:
     template <class _T, int _Dimensions>
     friend std::ofstream &operator<<(std::ofstream &stream, const FlatArray<_T, _Dimensions> &object);
     template <class _T, int _Dimensions>
-    friend std::ifstream &operator<<(std::ifstream &stream, const FlatArray<_T, _Dimensions> &object);
+    friend std::ifstream &operator>>(std::ifstream &stream, FlatArray<_T, _Dimensions> &object);
 
 
 private:
-    const std::array<unsigned, Dimensions> _dimensions;
+    std::array<unsigned, Dimensions> _dimensions;
     std::vector<Type> _data;
 };
 
@@ -58,11 +74,37 @@ private:
 template <class Type, int Dimensions>
 std::ofstream &operator<<(std::ofstream &stream, const FlatArray<Type, Dimensions> &object)
 {
-    return stream.write((const char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
+    if (stream.flags() & std::ios_base::binary)
+    {
+        auto dataCount = object._data.size();
+        stream.write((char*)&dataCount, sizeof(dataCount));
+        stream.write((char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
+    }
+    else
+    {
+        stream << object._data.size();
+        for (const auto& i: object._data)
+            stream << i;
+    }
+    return stream;
 }
 
 template <class Type, int Dimensions>
-std::ifstream &operator<<(std::ifstream &stream, const FlatArray<Type, Dimensions> &object)
+std::ifstream &operator>>(std::ifstream &stream, FlatArray<Type, Dimensions> &object)
 {
-    return stream.read((const char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
+    decltype(object._data.size()) dataCount;
+    if (stream.flags() & std::ios_base::binary)
+    {
+        stream.read((char*)&dataCount, sizeof(dataCount));
+        object._data.resize(dataCount);
+        stream.read((char*)&object._data[0], dataCount * sizeof(object._data[0]));
+    }
+    else
+    {
+        stream >> dataCount;
+        object._data.resize(dataCount);
+        for (size_t i = 0; i < dataCount; ++i)
+            stream >> object._data[i];
+    }
+    return stream;
 }
