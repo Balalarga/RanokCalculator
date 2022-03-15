@@ -10,6 +10,7 @@ find_package(OpenCL REQUIRED)
 
 set(THIRDPARTY_DIR ../ThirdParty)
 add_subdirectory(${THIRDPARTY_DIR}/RanokLanguage/RanokLanguageCore RanokLanguageCore)
+add_subdirectory(${THIRDPARTY_DIR}/RapidJson RapidJson)
 
 
 file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp)
