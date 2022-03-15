@@ -18,7 +18,7 @@ add_library(${PROJECT_NAME} ${PROJECT_SOURCES})
 
 # GLM
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${THIRDPARTY_DIR}/GLM/glm
+    ${THIRDPARTY_DIR}/Glm/glm
     ${OpenCL_INCLUDE_DIRS})
 
 # Ranok lang lib
