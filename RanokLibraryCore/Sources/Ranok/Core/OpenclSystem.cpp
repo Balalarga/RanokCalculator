@@ -232,7 +232,7 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
     _deviceData.ret = clReleaseMemObject(out_mem_obj);
 
 
-    std::cout << "Global opencl size: " << global << "\n";
+    std::cout << "Compute items: " << global << "\n";
 
     return true;
 }

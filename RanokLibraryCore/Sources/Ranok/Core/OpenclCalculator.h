@@ -266,7 +266,8 @@ public:
         {
             GenerateCode(program);
             _program = &program;
-            OpenclSystem::Get().Compile(_code);
+            if (!OpenclSystem::Get().Compile(_code))
+                return false;
         }
 
         // TODO: make opencl program "templated" for other dimensions
@@ -277,10 +278,11 @@ public:
         cl_float3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
 
 
-        if (_imageBuffer.Size() != 0)
-            _imageBuffer.Clear();
+        if (_modelBuffer.Size() != 0)
+            _modelBuffer.Clear();
 
-        _modelBuffer.Resize(space.GetPartition());
+        _imageBuffer.Resize(space.GetPartition());
+
         /*
            global char *resultZones,
            const int startId,
@@ -289,14 +291,14 @@ public:
            const float3 pointSize,
            const float3 halfSize)
         */
-        KernelArguments::Item output(&_modelBuffer[0], sizeof(_modelBuffer[0]), _modelBuffer.Size());
+        KernelArguments::Item output(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
         std::vector<KernelArguments::Item> optional
         {
-            {&startId, sizeof(startId)},
-            {&spaceSize, sizeof(spaceSize)},
-            {&startPoint, sizeof(startPoint)},
-            {&pointSize, sizeof(pointSize)},
-            {&halfSize, sizeof(halfSize)},
+            {&startId, sizeof(cl_int)},
+            {&spaceSize, sizeof(cl_uint3)},
+            {&startPoint, sizeof(cl_float3)},
+            {&pointSize, sizeof(cl_float3)},
+            {&halfSize, sizeof(cl_float3)},
         };
 
         KernelArguments args(output, optional);
@@ -305,6 +307,7 @@ public:
     }
 
     FlatArray<char, Dimensions>& GetModel() { return _modelBuffer; }
+    FlatArray<std::array<double, Dimensions+2>, Dimensions>& GetImage() { return _imageBuffer; }
 
 
 protected:

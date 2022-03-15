@@ -49,11 +49,17 @@ int main(int argc, char** argv)
     Space<3> space({0, 0, 0}, {2, 2, 2}, 3);
     OpenclCalculator<3> calculator;
 
-    if (!calculator.CalculateModel(program, space))
+    if (!calculator.CalculateImage(program, space))
         return NextErrorCode("Calculate failure");
 
     ofstream output("output.txt");
-    output << calculator.GetModel();
+    auto image = calculator.GetImage();
+    for (size_t i = 0; i <  image.Size(); ++i)
+    {
+        for (auto& j :image[i])
+            output << j << " ";
+        output << '\n';
+    }
     output.close();
 
     OpenclSystem::Get().Destroy();
