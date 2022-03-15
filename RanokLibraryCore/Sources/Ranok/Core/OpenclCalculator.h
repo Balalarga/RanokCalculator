@@ -248,12 +248,12 @@ public:
         if (enableBatching && batchSize < bufferSize)
             bufferSize = batchSize;
 
-        if (target == CalculateTarget::Model && _imageBuffer.Size() != 0)
+        if (target == CalculateTarget::Model)
         {
             _imageBuffer.Clear();
             _modelBuffer.Resize(bufferSize);
         }
-        else if (target == CalculateTarget::Image && _modelBuffer.Size() != 0)
+        else if (target == CalculateTarget::Image)
         {
             _modelBuffer.Clear();
             _imageBuffer.Resize(bufferSize);
@@ -277,37 +277,35 @@ public:
             {&halfSize, sizeof(cl_double3)},
         };
 
+        KernelArguments::Item modelOutput(&_modelBuffer[0], sizeof(char), _modelBuffer.Size());
+        KernelArguments::Item imageOutput(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
         if (enableBatching)
         {
             bool ok = false;
-            for (; startId < space.GetTotalPartition(); startId += bufferSize)
+            unsigned spaceFlatSize = space.GetTotalPartition();
+            for (; startId < spaceFlatSize; startId += bufferSize)
             {
                 if (target == CalculateTarget::Model)
-                {
-                    KernelArguments args({&_modelBuffer[0], sizeof(char), _modelBuffer.Size()}, optional);
-                    ok = OpenclSystem::Get().Run(modelFunctionName, args);
-                }
+                    ok = OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
                 else
-                {
-                    KernelArguments args({&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size()}, optional);
-                    ok = OpenclSystem::Get().Run(imageFunctionName, args);
-                }
+                    ok = OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
 
                 if (!ok)
                     break;
+
+                if (startId + bufferSize > spaceFlatSize)
+                    bufferSize = spaceFlatSize - startId;
+
+                callback(startId, bufferSize);
             }
 
             return ok;
         }
 
         if (target == CalculateTarget::Model)
-        {
-            KernelArguments args({&_modelBuffer[0], sizeof(char), _modelBuffer.Size()}, optional);
-            return OpenclSystem::Get().Run(modelFunctionName, args);
-        }
+            return OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
 
-        KernelArguments args({&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size()}, optional);
-        return OpenclSystem::Get().Run(imageFunctionName, args);
+        return OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
     }
 
     inline const CalculateTarget& GetLastTarget() { return _lastTarget; }

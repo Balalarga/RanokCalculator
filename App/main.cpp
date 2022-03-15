@@ -51,6 +51,11 @@ int main(int argc, char** argv)
     if (argc >= 5)
         recursiveDepth = stoi(argv[5]);
 
+    unsigned batchSize = 0;
+    if (argc >= 6)
+        recursiveDepth = stoi(argv[6]);
+
+
     fstream codeFile(codePath);
     if (!codeFile)
         return NextErrorCode("Couldn't open file " + codePath);
@@ -67,25 +72,30 @@ int main(int argc, char** argv)
     Space<3> space({0, 0, 0}, {args[0]->range.max, args[1]->range.max, args[2]->range.max}, recursiveDepth);
     OpenclCalculator<3> calculator;
 
-    if (!calculator.Calculate(target, program, space))
+
+    if (batchSize == 0)
+        batchSize = space.GetTotalPartition();
+
+    ofstream output;
+    if (target == CalculateTarget::Model)
+        output.open(outputFilepath + ".mbin");
+    else
+        output.open(outputFilepath + ".ibin");
+
+    output << space << "\n";
+    auto callback = [&output, &calculator, target, spaceSize = space.GetTotalPartition()](unsigned start, unsigned count)
+    {
+        cout << "Done " << 100*(start + count)/(float)spaceSize << "% (" << (start + count) << "/" << spaceSize << ")\n";
+        if (target == CalculateTarget::Model)
+            output << calculator.GetModel();
+        else
+            output << calculator.GetImage();
+    };
+
+    if (!calculator.Calculate(target, program, space, batchSize, callback))
         return NextErrorCode("Calculate failure");
 
-    if (target == CalculateTarget::Model)
-    {
-        ofstream output(outputFilepath + ".mbin");
-        output << space;
-        output<<"\n";
-        output << calculator.GetModel();
-        output.close();
-    }
-    else
-    {
-        ofstream output(outputFilepath + ".ibin");
-        output << space;
-        output<<"\n";
-        output << calculator.GetImage();
-        output.close();
-    }
+    output.close();
     cout << "Done\n";
 
     OpenclSystem::Get().Destroy();
