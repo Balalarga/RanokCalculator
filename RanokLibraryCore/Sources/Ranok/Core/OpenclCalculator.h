@@ -32,7 +32,7 @@ public:
              m[1] * m[1*n+0] * m[2*n+2] * m[3*n+3] + m[0*n+0] * m[1*n+1] * m[2*n+2] * m[3*n+3];
     }
 
-    static char checkZone8(float *values)
+    static char checkZone8(double *values)
     {
         bool plus = false;
         bool zero = false;
@@ -53,56 +53,56 @@ public:
         return -1;
     }
 
-    static void ExecModelTimes(std::function<double(cl_float3)> func,
+    static void ExecModelTimes(std::function<double(cl_double3)> func,
                                unsigned times,
                                char* resultZones,
                                int startId,
                                cl_uint3 spaceSize,
-                               cl_float3 startPoint,
-                               cl_float3 pointSize,
-                               cl_float3 halfSize)
+                               cl_double3 startPoint,
+                               cl_double3 pointSize,
+                               cl_double3 halfSize)
     {
         for(unsigned i = 0; i < times; ++i)
             ExecModel(func, i, resultZones, startId, spaceSize, startPoint, pointSize, halfSize);
     }
 
-    static void ExecImageTimes(std::function<double(cl_float3)> func,
+    static void ExecImageTimes(std::function<double(cl_double3)> func,
                                unsigned times,
                                double* result,
                                int startId,
                                cl_uint3 spaceSize,
-                               cl_float3 startPoint,
-                               cl_float3 pointSize,
-                               cl_float3 halfSize)
+                               cl_double3 startPoint,
+                               cl_double3 pointSize,
+                               cl_double3 halfSize)
     {
         for(unsigned i = 0; i < times; ++i)
             ExecImage(func, i, result, startId, spaceSize, startPoint, pointSize, halfSize);
     }
 
-    static void ExecModel(std::function<double(cl_float3)> func,
+    static void ExecModel(std::function<double(cl_double3)> func,
                           unsigned id,
                           char*& resultZones,
                           int startId,
                           cl_uint3 spaceSize,
-                          cl_float3 startPoint,
-                          cl_float3 pointSize,
-                          cl_float3 halfSize)
+                          cl_double3 startPoint,
+                          cl_double3 pointSize,
+                          cl_double3 halfSize)
     {
         int spaceId = startId + id;
-        cl_float3 point;
+        cl_double3 point;
         point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
         point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
         point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
-//        std::cout << "Params: " << "\n";
-//        std::cout << "    startId: " << startId << "\n";
-//        std::cout << "    spaceSize: "  << spaceSize.x << ", " << spaceSize.y << ", " << spaceSize.z << "\n";
-//        std::cout << "    startPoint: " << startPoint.x << ", " << startPoint.y << ", " << startPoint.z << "\n";
-//        std::cout << "    pointSize: "  << pointSize.x << ", " << pointSize.y << ", " << pointSize.z << "\n";
-//        std::cout << "    halfSize: "   << halfSize.x << ", " << halfSize.y << ", " << halfSize.z << "\n";
-//        std::cout << "    point: "   << point.x << ", " << point.y << ", " << point.z << "\n";
+    //        std::cout << "Params: " << "\n";
+    //        std::cout << "    startId: " << startId << "\n";
+    //        std::cout << "    spaceSize: "  << spaceSize.x << ", " << spaceSize.y << ", " << spaceSize.z << "\n";
+    //        std::cout << "    startPoint: " << startPoint.x << ", " << startPoint.y << ", " << startPoint.z << "\n";
+    //        std::cout << "    pointSize: "  << pointSize.x << ", " << pointSize.y << ", " << pointSize.z << "\n";
+    //        std::cout << "    halfSize: "   << halfSize.x << ", " << halfSize.y << ", " << halfSize.z << "\n";
+    //        std::cout << "    point: "   << point.x << ", " << point.y << ", " << point.z << "\n";
 
-        float values[8];
+        double values[8];
         values[0] = func({point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z});
         values[1] = func({point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z});
         values[2] = func({point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z});
@@ -115,17 +115,17 @@ public:
         resultZones[id] = checkZone8(values);
     }
 
-    static void ExecImage(std::function<double(cl_float3)> func,
+    static void ExecImage(std::function<double(cl_double3)> func,
                             unsigned id,
                             double* result,
                             int startId,
                             cl_uint3 spaceSize,
-                            cl_float3 startPoint,
-                            cl_float3 pointSize,
-                            cl_float3 halfSize)
+                            cl_double3 startPoint,
+                            cl_double3 pointSize,
+                            cl_double3 halfSize)
     {
         int spaceId = startId + id;
-        cl_float3 point;
+        cl_double3 point;
         point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
         point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
         point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
@@ -227,9 +227,9 @@ public:
         // TODO: make opencl program "templated" for other dimensions
         cl_int startId = 0;
         cl_uint3 spaceSize = {space.GetPartition()[0], space.GetPartition()[1], space.GetPartition()[2]};
-        cl_float3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
-        cl_float3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
-        cl_float3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
+        cl_double3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
+        cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
+        cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
 
 
         if (_imageBuffer.Size() != 0)
@@ -241,18 +241,18 @@ public:
            global char *resultZones,
            const int startId,
            const uint3 spaceSize,
-           const float3 startPoint,
-           const float3 pointSize,
-           const float3 halfSize)
+           const double3 startPoint,
+           const double3 pointSize,
+           const double3 halfSize)
         */
         KernelArguments::Item output(&_modelBuffer[0], sizeof(char), _modelBuffer.Size());
         std::vector<KernelArguments::Item> optional
         {
             {&startId, sizeof(cl_int)},
             {&spaceSize, sizeof(cl_uint3)},
-            {&startPoint, sizeof(cl_float3)},
-            {&pointSize, sizeof(cl_float3)},
-            {&halfSize, sizeof(cl_float3)},
+            {&startPoint, sizeof(cl_double3)},
+            {&pointSize, sizeof(cl_double3)},
+            {&halfSize, sizeof(cl_double3)},
         };
 
         KernelArguments args(output, optional);
@@ -273,9 +273,9 @@ public:
         // TODO: make opencl program "templated" for other dimensions
         cl_int startId = 0;
         cl_uint3 spaceSize = {space.GetPartition()[0], space.GetPartition()[1], space.GetPartition()[2]};
-        cl_float3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
-        cl_float3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
-        cl_float3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
+        cl_double3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
+        cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
+        cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
 
 
         if (_modelBuffer.Size() != 0)
@@ -287,18 +287,18 @@ public:
            global char *resultZones,
            const int startId,
            const uint3 spaceSize,
-           const float3 startPoint,
-           const float3 pointSize,
-           const float3 halfSize)
+           const double3 startPoint,
+           const double3 pointSize,
+           const double3 halfSize)
         */
         KernelArguments::Item output(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
         std::vector<KernelArguments::Item> optional
         {
             {&startId, sizeof(cl_int)},
             {&spaceSize, sizeof(cl_uint3)},
-            {&startPoint, sizeof(cl_float3)},
-            {&pointSize, sizeof(cl_float3)},
-            {&halfSize, sizeof(cl_float3)},
+            {&startPoint, sizeof(cl_double3)},
+            {&pointSize, sizeof(cl_double3)},
+            {&halfSize, sizeof(cl_double3)},
         };
 
         KernelArguments args(output, optional);
@@ -313,12 +313,10 @@ public:
 protected:
     void GenerateCode(Program& program)
     {
-        std::string generatedCode = _codeGenerator.Generate(program);
-        std::cout << generatedCode << std::endl;
         std::stringstream codeStream;
 
         codeStream << codeHeader;
-        codeStream << generatedCode;
+        codeStream << _codeGenerator.Generate(program);
         codeStream << codeFooter;
 
         _code = codeStream.str();
@@ -374,14 +372,14 @@ double __matrix4x4Det(double* m, int n)
          m[1] * m[1*n+0] * m[2*n+2] * m[3*n+3] + m[0*n+0] * m[1*n+1] * m[2*n+2] * m[3*n+3];
 }
 
-char __checkZone8(float *values)
+char __checkZone8(double *values)
 {
     bool plus = false;
     bool zero = false;
     bool minus = false;
     for(int i = 0; i < 8; i++)
     {
-        if(values[i] == 0)
+        if(values[i] == 0.0)
             zero = true;
         else if(values[i] < 0)
             minus = true;
@@ -401,19 +399,19 @@ std::string OpenclCalculator<Dimensions>::codeFooter = R"(
 kernel void __calcualteModel(global char *resultZones,
                            const int startId,
                            const uint3 spaceSize,
-                           const float3 startPoint,
-                           const float3 pointSize,
-                           const float3 halfSize)
+                           const double3 startPoint,
+                           const double3 pointSize,
+                           const double3 halfSize)
 {
     int id = get_global_id(0);
     int spaceId = startId + id;
-    float3 point;
+    double3 point;
     point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
     point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
     point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
 
-    float values[8];
+    double values[8];
     values[0] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z);
     values[1] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z);
     values[2] = __resultFunc(point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z);
@@ -429,13 +427,13 @@ kernel void __calcualteModel(global char *resultZones,
 kernel void __calculateMImage(global double *result,
                            const int startId,
                            const uint3 spaceSize,
-                           const float3 startPoint,
-                           const float3 pointSize,
-                           const float3 halfSize)
+                           const double3 startPoint,
+                           const double3 pointSize,
+                           const double3 halfSize)
 {
     int id = get_global_id(0);
     int spaceId = startId + id;
-    float3 point;
+    double3 point;
     point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
     point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
     point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);

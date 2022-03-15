@@ -74,37 +74,20 @@ private:
 template <class Type, int Dimensions>
 std::ofstream &operator<<(std::ofstream &stream, const FlatArray<Type, Dimensions> &object)
 {
-    if (stream.flags() & std::ios_base::binary)
-    {
-        auto dataCount = object._data.size();
-        stream.write((char*)&dataCount, sizeof(dataCount));
-        stream.write((char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
-    }
-    else
-    {
-        stream << object._data.size();
-        for (const auto& i: object._data)
-            stream << i;
-    }
+    size_t dataCount = object._data.size();
+    stream.write((char*)&dataCount, sizeof(dataCount));
+    stream.write((char*)&object._data[0], object._data.size() * sizeof(object._data[0]));
     return stream;
 }
 
 template <class Type, int Dimensions>
 std::ifstream &operator>>(std::ifstream &stream, FlatArray<Type, Dimensions> &object)
 {
-    decltype(object._data.size()) dataCount;
-    if (stream.flags() & std::ios_base::binary)
-    {
-        stream.read((char*)&dataCount, sizeof(dataCount));
-        object._data.resize(dataCount);
-        stream.read((char*)&object._data[0], dataCount * sizeof(object._data[0]));
-    }
-    else
-    {
-        stream >> dataCount;
-        object._data.resize(dataCount);
-        for (size_t i = 0; i < dataCount; ++i)
-            stream >> object._data[i];
-    }
+    size_t dataCount;
+
+    stream.read((char*)&dataCount, sizeof(dataCount));
+    object._data.resize(dataCount);
+    stream.read((char*)&object._data[0], dataCount * sizeof(object._data[0]));
+    
     return stream;
 }

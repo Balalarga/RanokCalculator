@@ -231,9 +231,6 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
     }
     _deviceData.ret = clReleaseMemObject(out_mem_obj);
 
-
-    std::cout << "Compute items: " << global << "\n";
-
     return true;
 }
 

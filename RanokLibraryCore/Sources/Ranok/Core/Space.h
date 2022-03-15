@@ -9,8 +9,8 @@ template<int Dimensions>
 class Space
 {
 public:
-    Space(const std::array<float, Dimensions> &centerPoint,
-          const std::array<float, Dimensions> &size,
+    Space(const std::array<double, Dimensions> &centerPoint,
+          const std::array<double, Dimensions> &size,
           const unsigned& recursiveDepth)
     {
         _size = size;
@@ -19,8 +19,8 @@ public:
         UpdateStartPoint();
     }
 
-    Space(const std::array<float, Dimensions> &centerPoint,
-          const std::array<float, Dimensions> &size,
+    Space(const std::array<double, Dimensions> &centerPoint,
+          const std::array<double, Dimensions> &size,
           const std::array<unsigned, Dimensions> partition = std::array<unsigned, Dimensions>(1))
     {
         _size = size;
@@ -33,16 +33,16 @@ public:
     virtual ~Space() = default;
 
 
-    inline const std::array<float, Dimensions>& GetSize() const { return _size; }
-    inline const std::array<float, Dimensions>& GetCentral() const { return _centerPoint; }
+    inline const std::array<double, Dimensions>& GetSize() const { return _size; }
+    inline const std::array<double, Dimensions>& GetCentral() const { return _centerPoint; }
     inline const std::array<unsigned, Dimensions>& GetPartition() const { return _partition; }
-    inline const std::array<float, Dimensions>& GetStartPoint() const { return _startPoint; }
+    inline const std::array<double, Dimensions>& GetStartPoint() const { return _startPoint; }
     inline unsigned GetTotalPartition() const { return _partition[0] * _partition[1] * _partition[2]; }
 
 
-    std::array<float, Dimensions> GetUnitSize() const
+    std::array<double, Dimensions> GetUnitSize() const
     {
-        std::array<float, Dimensions> unitSizes;
+        std::array<double, Dimensions> unitSizes;
 
         for (size_t i = 0; i < Dimensions; ++i)
             unitSizes[i] = _size[i] / _partition[i];
@@ -60,17 +60,17 @@ public:
         _partition = { partition, partition, partition };
     }
 
-    void SetStartPoint(const std::array<float, Dimensions>& point)
+    void SetStartPoint(const std::array<double, Dimensions>& point)
     {
         _startPoint = point;
         UpdateCenterPoint();
     }
-    void SetCenterPoint(const std::array<float, Dimensions>& point)
+    void SetCenterPoint(const std::array<double, Dimensions>& point)
     {
         _centerPoint = point;
         UpdateStartPoint();
     }
-    void SetSize(const std::array<float, Dimensions>& size)
+    void SetSize(const std::array<double, Dimensions>& size)
     {
         _size = size;
     }
@@ -96,25 +96,19 @@ protected:
 
 
 private:
-    std::array<float, Dimensions> _size;
-    std::array<float, Dimensions> _centerPoint;
-    std::array<float, Dimensions> _startPoint;
+    std::array<double, Dimensions> _size;
+    std::array<double, Dimensions> _centerPoint;
+    std::array<double, Dimensions> _startPoint;
     std::array<unsigned, Dimensions> _partition;
 };
 
 template <int Dimensions>
 std::ofstream &operator<<(std::ofstream &stream, const Space<Dimensions>& space)
 {
-    if (stream.flags() & std::ios_base::binary)
-    {
-        unsigned dims = Dimensions;
-        stream.write((char*)&dims, sizeof(dims));
-        stream.write((char*)&space._centerPoint, sizeof(space._centerPoint));
-    }
-    else
-    {
-
-    }
+    stream.write((char*)&space._size, sizeof(space._size));
+    stream.write((char*)&space._centerPoint, sizeof(space._centerPoint));
+    stream.write((char*)&space._startPoint, sizeof(space._startPoint));
+    stream.write((char*)&space._partition, sizeof(space._partition));
     return stream;
 }
 
@@ -122,11 +116,9 @@ std::ofstream &operator<<(std::ofstream &stream, const Space<Dimensions>& space)
 template <int Dimensions>
 std::ifstream &operator>>(std::ifstream &stream, Space<Dimensions>& space)
 {
-    if (stream.flags() & std::ios_base::binary)
-    {
-    }
-    else
-    {
-    }
+    stream.read((char*)&space._size, sizeof(space._size));
+    stream.read((char*)&space._centerPoint, sizeof(space._centerPoint));
+    stream.read((char*)&space._startPoint, sizeof(space._startPoint));
+    stream.read((char*)&space._partition, sizeof(space._partition));
     return stream;
 }
