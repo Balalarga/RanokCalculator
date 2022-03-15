@@ -182,6 +182,12 @@ public:
 };
 
 
+enum class CalculateTarget: uint8_t
+{
+    Model,
+    Image
+};
+
 
 template<int Dimensions>
 class OpenclCalculator
@@ -214,8 +220,15 @@ public:
         _imageGradient = imageGradient;
     }
 
-    bool CalculateModel(Program& program, const Space<Dimensions>& space, int batchSize = 0)
+    bool Calculate(CalculateTarget target,
+                   Program& program,
+                   const Space<Dimensions>& space,
+                   unsigned batchSize = 0,
+                   const std::function<void(unsigned, unsigned)>& callback = nullptr)
     {
+        const bool enableBatching = batchSize != 0 && callback != nullptr;
+        _lastTarget = target;
+
         if (_program != &program)
         {
             GenerateCode(program);
@@ -231,57 +244,21 @@ public:
         cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
         cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
 
+        unsigned bufferSize = space.GetTotalPartition();
+        if (enableBatching && batchSize < bufferSize)
+            bufferSize = batchSize;
 
-        if (_imageBuffer.Size() != 0)
+        if (target == CalculateTarget::Model && _imageBuffer.Size() != 0)
+        {
             _imageBuffer.Clear();
-
-        _modelBuffer.Resize(space.GetPartition());
-
-        /*
-           global char *resultZones,
-           const int startId,
-           const uint3 spaceSize,
-           const double3 startPoint,
-           const double3 pointSize,
-           const double3 halfSize)
-        */
-        KernelArguments::Item output(&_modelBuffer[0], sizeof(char), _modelBuffer.Size());
-        std::vector<KernelArguments::Item> optional
+            _modelBuffer.Resize(bufferSize);
+        }
+        else if (target == CalculateTarget::Image && _modelBuffer.Size() != 0)
         {
-            {&startId, sizeof(cl_int)},
-            {&spaceSize, sizeof(cl_uint3)},
-            {&startPoint, sizeof(cl_double3)},
-            {&pointSize, sizeof(cl_double3)},
-            {&halfSize, sizeof(cl_double3)},
-        };
-
-        KernelArguments args(output, optional);
-
-        return OpenclSystem::Get().Run(modelFunctionName, args);
-    }
-
-    bool CalculateImage(Program& program, const Space<Dimensions>& space, int batchSize = 0)
-    {
-        if (_program != &program)
-        {
-            GenerateCode(program);
-            _program = &program;
-            if (!OpenclSystem::Get().Compile(_code))
-                return false;
+            _modelBuffer.Clear();
+            _imageBuffer.Resize(bufferSize);
         }
 
-        // TODO: make opencl program "templated" for other dimensions
-        cl_int startId = 0;
-        cl_uint3 spaceSize = {space.GetPartition()[0], space.GetPartition()[1], space.GetPartition()[2]};
-        cl_double3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
-        cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
-        cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
-
-
-        if (_modelBuffer.Size() != 0)
-            _modelBuffer.Clear();
-
-        _imageBuffer.Resize(space.GetPartition());
 
         /*
            global char *resultZones,
@@ -291,7 +268,6 @@ public:
            const double3 pointSize,
            const double3 halfSize)
         */
-        KernelArguments::Item output(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
         std::vector<KernelArguments::Item> optional
         {
             {&startId, sizeof(cl_int)},
@@ -301,13 +277,43 @@ public:
             {&halfSize, sizeof(cl_double3)},
         };
 
-        KernelArguments args(output, optional);
+        if (enableBatching)
+        {
+            bool ok = false;
+            for (; startId < space.GetTotalPartition(); startId += bufferSize)
+            {
+                if (target == CalculateTarget::Model)
+                {
+                    KernelArguments args({&_modelBuffer[0], sizeof(char), _modelBuffer.Size()}, optional);
+                    ok = OpenclSystem::Get().Run(modelFunctionName, args);
+                }
+                else
+                {
+                    KernelArguments args({&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size()}, optional);
+                    ok = OpenclSystem::Get().Run(imageFunctionName, args);
+                }
 
+                if (!ok)
+                    break;
+            }
+
+            return ok;
+        }
+
+        if (target == CalculateTarget::Model)
+        {
+            KernelArguments args({&_modelBuffer[0], sizeof(char), _modelBuffer.Size()}, optional);
+            return OpenclSystem::Get().Run(modelFunctionName, args);
+        }
+
+        KernelArguments args({&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size()}, optional);
         return OpenclSystem::Get().Run(imageFunctionName, args);
     }
 
-    FlatArray<char, Dimensions>& GetModel() { return _modelBuffer; }
-    FlatArray<std::array<double, Dimensions+2>, Dimensions>& GetImage() { return _imageBuffer; }
+    inline const CalculateTarget& GetLastTarget() { return _lastTarget; }
+
+    inline FlatArray<char, Dimensions>& GetModel() { return _modelBuffer; }
+    inline FlatArray<std::array<double, Dimensions+2>, Dimensions>& GetImage() { return _imageBuffer; }
 
 
 protected:
@@ -337,6 +343,7 @@ private:
     glm::fvec4 _modelColor;
 
     Program* _program;
+    CalculateTarget _lastTarget;
     FlatArray<char, Dimensions> _modelBuffer;
     FlatArray<std::array<double, Dimensions+2>, Dimensions> _imageBuffer;
 };

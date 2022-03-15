@@ -1,9 +1,6 @@
 [submodule "ThirdParty/RanokLanguage"]
 	path = ThirdParty/RanokLanguage
         url = https://github.com/Balalarga/RanokLanguage.git
-[submodule "ThirdParty/RapidJson"]
-	path = ThirdParty/RapidJson
-	url = https://github.com/Tencent/rapidjson.git
 [submodule "ThirdParty/Glm"]
 	path = ThirdParty/Glm
 	url = https://github.com/g-truc/glm.git

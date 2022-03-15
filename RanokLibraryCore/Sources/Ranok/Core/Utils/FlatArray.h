@@ -35,6 +35,11 @@ public:
         _data.resize(dataSize);
     }
 
+    void Resize(unsigned size)
+    {
+        _data.resize(size);
+    }
+
     void Clear(const std::array<unsigned, Dimensions>& dims = {})
     {
         if (!dims.empty())

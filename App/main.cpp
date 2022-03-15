@@ -39,9 +39,9 @@ int main(int argc, char** argv)
     if (argc >= 2)
         codePath = argv[2];
     
-    string mode = "model";
-    if (argc >= 3)
-        mode = argv[3];
+    CalculateTarget target = CalculateTarget::Model;
+    if (argc >= 3 && CharToLower(argv[3]) == "image")
+        target = CalculateTarget::Image;
 
     string outputFilepath = "output";
     if (argc >= 4)
@@ -67,11 +67,11 @@ int main(int argc, char** argv)
     Space<3> space({0, 0, 0}, {args[0]->range.max, args[1]->range.max, args[2]->range.max}, recursiveDepth);
     OpenclCalculator<3> calculator;
 
-    if (mode == "model")
+    if (!calculator.Calculate(target, program, space))
+        return NextErrorCode("Calculate failure");
+
+    if (target == CalculateTarget::Model)
     {
-        if (!calculator.CalculateModel(program, space))
-            return NextErrorCode("Calculate failure");
-    
         ofstream output(outputFilepath + ".mbin");
         output << space;
         output<<"\n";
@@ -80,9 +80,6 @@ int main(int argc, char** argv)
     }
     else
     {
-        if (!calculator.CalculateImage(program, space))
-            return NextErrorCode("Calculate failure");
-    
         ofstream output(outputFilepath + ".ibin");
         output << space;
         output<<"\n";
