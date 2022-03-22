@@ -189,7 +189,6 @@ enum class CalculateTarget: uint8_t
 };
 
 
-template<int Dimensions>
 class OpenclCalculator
 {
 public:
@@ -222,7 +221,7 @@ public:
 
     bool Calculate(CalculateTarget target,
                    Program& program,
-                   const Space<Dimensions>& space,
+                   const Space& space,
                    unsigned batchSize = 0,
                    const std::function<void(unsigned, unsigned)>& callback = nullptr)
     {
@@ -310,8 +309,8 @@ public:
 
     inline const CalculateTarget& GetLastTarget() { return _lastTarget; }
 
-    inline FlatArray<char, Dimensions>& GetModel() { return _modelBuffer; }
-    inline FlatArray<std::array<double, Dimensions+2>, Dimensions>& GetImage() { return _imageBuffer; }
+    inline FlatArray<char>& GetModel() { return _modelBuffer; }
+    inline FlatArray<std::vector<double>>& GetImage() { return _imageBuffer; }
 
 
 protected:
@@ -342,24 +341,20 @@ private:
 
     Program* _program;
     CalculateTarget _lastTarget;
-    FlatArray<char, Dimensions> _modelBuffer;
-    FlatArray<std::array<double, Dimensions+2>, Dimensions> _imageBuffer;
+    FlatArray<char> _modelBuffer;
+    FlatArray<std::vector<double>> _imageBuffer;
 };
 
 
-template<int Dimensions>
-std::string OpenclCalculator<Dimensions>::modelFunctionName = "__calcualteModel";
+std::string OpenclCalculator::modelFunctionName = "__calcualteModel";
 
-template<int Dimensions>
-std::string OpenclCalculator<Dimensions>::imageFunctionName = "__calculateMImage";
+std::string OpenclCalculator::imageFunctionName = "__calculateMImage";
 
-template<int Dimensions>
-CodeGenerator::LanguageDefinition OpenclCalculator<Dimensions>::languageDefenition =
+CodeGenerator::LanguageDefinition OpenclCalculator::languageDefenition =
         CodeGenerator::LanguageDefinition()
         .MainFuncName("__resultFunc");
 
-template<int Dimensions>
-std::string OpenclCalculator<Dimensions>::codeHeader = R"(
+std::string OpenclCalculator::codeHeader = R"(
 double __matrix4x4Det(double* m, int n)
 {
       return
@@ -399,8 +394,7 @@ char __checkZone8(double *values)
 }
 )";
 
-template<int Dimensions>
-std::string OpenclCalculator<Dimensions>::codeFooter = R"(
+std::string OpenclCalculator::codeFooter = R"(
 kernel void __calcualteModel(global char *resultZones,
                            const int startId,
                            const uint3 spaceSize,

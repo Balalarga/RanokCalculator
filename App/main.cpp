@@ -69,8 +69,8 @@ int main(int argc, char** argv)
     Program program = parser.Parse(Lexer::CreateFrom(code));
     auto args = program.Table().Arguments();
 
-    Space<3> space({0, 0, 0}, {args[0]->range.max, args[1]->range.max, args[2]->range.max}, recursiveDepth);
-    OpenclCalculator<3> calculator;
+    Space space({0, 0, 0}, {args[0]->range.max, args[1]->range.max, args[2]->range.max}, recursiveDepth);
+    OpenclCalculator calculator;
 
 
     if (batchSize == 0)
