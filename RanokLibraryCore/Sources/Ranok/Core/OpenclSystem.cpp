@@ -82,7 +82,7 @@ bool OpenclSystem::Compile(const std::string &code)
     if (_deviceData.ret != CL_SUCCESS)
     {
         std::cout << code << "\n";
-        std::cout << "Failed to create compute program!\n";
+        std::cout << "Failed to create compute program("<<_deviceData.ret<<")!\n";
         return false;
     }
     _deviceData.ret = clBuildProgram(_deviceData.program,
@@ -206,6 +206,7 @@ bool OpenclSystem::Run(const std::string& functionName, const KernelArguments& a
     if (_deviceData.ret != CL_SUCCESS)
     {
         std::cout << "Failed to execute kernel: "<<_deviceData.ret<<"\n";
+        std::cout << "Work group size: "<<global<<"\n";
         clReleaseMemObject(out_mem_obj);
         DumpDeviceData();
         return false;

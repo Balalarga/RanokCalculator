@@ -10,7 +10,7 @@ template <class Type>
 class FlatArray
 {
 public:
-    FlatArray(unsigned count = 0):
+    FlatArray(size_t count = 0):
         _dimensions(count)
     {
     }
@@ -38,7 +38,7 @@ public:
         _data.resize(dataSize);
     }
 
-    void Resize(unsigned size)
+    void Resize(size_t size)
     {
         _data.resize(size);
     }
@@ -52,10 +52,10 @@ public:
     }
 
     inline long Size() const { return _data.size(); }
-    inline const unsigned& GetDimension(unsigned id) { return _dimensions[id]; }
+    inline const unsigned& GetDimension(size_t id) { return _dimensions[id]; }
     inline std::vector<unsigned>& GetDimensions() { return _dimensions; }
 
-    inline Type& operator[](long id) { return _data[id]; }
+    inline Type& operator[](size_t id) { return _data[id]; }
     Type& operator[](std::vector<unsigned> &ids)
     {
         long id = 0;
@@ -65,6 +65,20 @@ public:
         return _data[id];
     }
 
+    bool WritePart(std::ofstream& stream, size_t count)
+    {
+        if (count > _data.size())
+            return false;
+
+        size_t dimsCount = _dimensions.size();
+        stream.write((char*)&dimsCount, sizeof(dimsCount));
+        stream.write((char*)&_dimensions[0], dimsCount * sizeof(_dimensions[0]));
+
+        stream.write((char*)&count, sizeof(count));
+        stream.write((char*)&_data[0], count * sizeof(_data[0]));
+
+        return true;
+    }
 
     template <class _T>
     friend std::ofstream &operator<<(std::ofstream &stream, const FlatArray<_T> &object);
@@ -95,15 +109,6 @@ std::ofstream &operator<<(std::ofstream &stream, const FlatArray<Type> &object)
 template <class Type>
 std::ifstream &operator>>(std::ifstream &stream, FlatArray<Type> &object)
 {
-    size_t dimsCount;
-    stream.read((char*)&dimsCount, sizeof(dimsCount));
-    object._dimensions.resize(dimsCount);
-    stream.read((char*)&object._dimensions[0], dimsCount * sizeof(object._dimensions[0]));
-
-    size_t dataCount;
-    stream.read((char*)&dataCount, sizeof(dataCount));
-    object._data.resize(dataCount);
-    stream.read((char*)&object._data[0], dataCount * sizeof(object._data[0]));
-    
+    object.WritePart(stream, object._data.size());
     return stream;
 }

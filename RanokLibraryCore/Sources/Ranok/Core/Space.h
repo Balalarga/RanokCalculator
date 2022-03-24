@@ -8,6 +8,8 @@
 class Space
 {
 public:
+    Space() = default;
+
     Space(const std::vector<double> &centerPoint,
           const std::vector<double> &size,
           const unsigned& recursiveDepth)
@@ -43,7 +45,13 @@ public:
     inline const std::vector<double>& GetCentral() const { return _centerPoint; }
     inline const std::vector<unsigned>& GetPartition() const { return _partition; }
     inline const std::vector<double>& GetStartPoint() const { return _startPoint; }
-    inline unsigned GetTotalPartition() const { return _partition[0] * _partition[1] * _partition[2]; }
+    inline size_t GetTotalPartition() const
+    {
+        size_t total = 1;
+        for (auto& i: _partition)
+            total *= i;
+        return total;
+    }
 
 
     std::vector<double> GetUnitSize() const
@@ -81,19 +89,47 @@ public:
         _size = size;
     }
 
-    friend std::ofstream &operator<<(std::ofstream &stream, const Space& space);
-    friend std::ifstream &operator>>(std::ifstream &stream, Space& space);
+    friend std::ofstream& operator << (std::ofstream &stream, Space& space)
+    {
+        unsigned dims = space._size.size();
+        stream.write((char*)&dims, sizeof(dims));
+        stream.write((char*)&space._size, sizeof(space._size[0]) * space._size.size());
+        stream.write((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * space._centerPoint.size());
+        stream.write((char*)&space._startPoint, sizeof(space._startPoint[0]) * space._startPoint.size());
+        stream.write((char*)&space._partition, sizeof(space._partition[0]) * space._partition.size());
+        return stream;
+    }
+
+    friend std::ifstream& operator >> (std::ifstream& stream, Space &space)
+    {
+        unsigned dims;
+        stream.read((char*)&dims, sizeof(dims));
+
+        space._size.resize(dims);
+        space._centerPoint.resize(dims);
+        space._startPoint.resize(dims);
+        space._partition.resize(dims);
+
+        stream.read((char*)&space._size, sizeof(space._size[0]) * dims);
+        stream.read((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * dims);
+        stream.read((char*)&space._startPoint, sizeof(space._startPoint[0]) * dims);
+        stream.read((char*)&space._partition, sizeof(space._partition[0]) * dims);
+
+        return stream;
+    }
 
 
 protected:
     void UpdateCenterPoint()
     {
+        _centerPoint.resize(_size.size());
         for(size_t i = 0; i < _size.size(); ++i)
             _centerPoint[i] = _startPoint[i] + _size[i] / 2.f;
     }
 
     void UpdateStartPoint()
     {
+        _startPoint.resize(_size.size());
         for(size_t i = 0; i < _size.size(); ++i)
             _startPoint[i] = _centerPoint[i] - _size[i] / 2.f;
     }
@@ -105,33 +141,3 @@ private:
     std::vector<double> _startPoint;
     std::vector<unsigned> _partition;
 };
-
-std::ofstream &operator<<(std::ofstream &stream, const Space& space)
-{
-    unsigned dims = space._size.size();
-    stream.write((char*)&dims, sizeof(dims));
-    stream.write((char*)&space._size, sizeof(space._size[0]) * space._size.size());
-    stream.write((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * space._centerPoint.size());
-    stream.write((char*)&space._startPoint, sizeof(space._startPoint[0]) * space._startPoint.size());
-    stream.write((char*)&space._partition, sizeof(space._partition[0]) * space._partition.size());
-    return stream;
-}
-
-
-std::ifstream &operator>>(std::ifstream &stream, Space& space)
-{
-    unsigned dims;
-    stream.read((char*)&dims, sizeof(dims));
-
-    space._size.resize(dims);
-    space._centerPoint.resize(dims);
-    space._startPoint.resize(dims);
-    space._partition.resize(dims);
-
-    stream.read((char*)&space._size, sizeof(space._size[0]) * dims);
-    stream.read((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * dims);
-    stream.read((char*)&space._startPoint, sizeof(space._startPoint[0]) * dims);
-    stream.read((char*)&space._partition, sizeof(space._partition[0]) * dims);
-
-    return stream;
-}

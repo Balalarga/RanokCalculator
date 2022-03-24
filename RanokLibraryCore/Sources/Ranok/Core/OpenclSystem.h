@@ -24,16 +24,16 @@ struct KernelArguments
 {
     struct Item
     {
-        Item(void* ref, long size, long count = 1):
+        Item(void* ref, size_t size, size_t count = 1):
             ref(ref),
             size(size),
             count(count) {}
 
-        unsigned TotalSize() const { return size * count; }
+        size_t TotalSize() const { return size * count; }
 
         void* const ref;
-        const unsigned size;
-        const unsigned count;
+        const size_t size;
+        const size_t count;
     };
 
     KernelArguments(const Item& output, const std::vector<Item>& optional = {}):
