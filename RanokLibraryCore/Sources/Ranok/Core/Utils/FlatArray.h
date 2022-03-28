@@ -109,6 +109,13 @@ std::ofstream &operator<<(std::ofstream &stream, const FlatArray<Type> &object)
 template <class Type>
 std::ifstream &operator>>(std::ifstream &stream, FlatArray<Type> &object)
 {
-    object.WritePart(stream, object._data.size());
+    size_t dimsCount;
+    stream.read((char*)&dimsCount, sizeof(dimsCount));
+    stream.read((char*)&object._dimensions[0], dimsCount * sizeof(object._dimensions[0]));
+
+    size_t dataCount;
+    stream.read((char*)&dataCount, sizeof(dataCount));
+    stream.read((char*)&object._data[0], dataCount * sizeof(object._data[0]));
+
     return stream;
 }
