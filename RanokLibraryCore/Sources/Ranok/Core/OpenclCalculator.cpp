@@ -172,9 +172,12 @@ void OpenclCalculator::SetImageGradient(const LinearGradient &imageGradient)
     _imageGradient = imageGradient;
 }
 
-bool OpenclCalculator::Calculate(CalculateTarget target, Program &program, const Space &space, size_t batchSize, const std::function<void (size_t, size_t)> &callback)
+bool OpenclCalculator::Calculate(CalculateTarget target,
+                                 Program &program,
+                                 const Space &space,
+                                 const std::function<void (size_t, size_t)> &onDone,
+                                 size_t batchSize)
 {
-    const bool enableBatching = batchSize != 0 && callback != nullptr;
     _lastTarget = target;
 
     if (_program != &program)
@@ -193,7 +196,7 @@ bool OpenclCalculator::Calculate(CalculateTarget target, Program &program, const
     cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
 
     size_t bufferSize = space.GetTotalPartition();
-    if (enableBatching && batchSize < bufferSize)
+    if (batchSize != 0 && batchSize < bufferSize)
         bufferSize = batchSize;
 
     if (target == CalculateTarget::Model)
@@ -207,15 +210,14 @@ bool OpenclCalculator::Calculate(CalculateTarget target, Program &program, const
         _imageBuffer.Resize(bufferSize);
     }
 
-
     /*
-           global char *resultZones,
-           const int startId,
-           const uint3 spaceSize,
-           const double3 startPoint,
-           const double3 pointSize,
-           const double3 halfSize)
-        */
+       global char *resultZones,
+       const int startId,
+       const uint3 spaceSize,
+       const double3 startPoint,
+       const double3 pointSize,
+       const double3 halfSize)
+    */
     std::vector<KernelArguments::Item> optional
     {
         {&startId, sizeof(cl_int)},
@@ -227,31 +229,23 @@ bool OpenclCalculator::Calculate(CalculateTarget target, Program &program, const
 
     KernelArguments::Item modelOutput(&_modelBuffer[0], sizeof(char), _modelBuffer.Size());
     KernelArguments::Item imageOutput(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
-    if (enableBatching)
+    bool ok = false;
+    size_t spaceFlatSize = space.GetTotalPartition();
+    for (size_t mstartId = 0; mstartId < spaceFlatSize; mstartId += bufferSize)
     {
-        bool ok = false;
-        size_t spaceFlatSize = space.GetTotalPartition();
-        for (size_t mstartId = 0; mstartId < spaceFlatSize; mstartId += bufferSize)
-        {
-            if (target == CalculateTarget::Model)
-                ok = OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
-            else
-                ok = OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
+        if (target == CalculateTarget::Model)
+            ok = OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
+        else
+            ok = OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
 
-            if (!ok)
-                break;
+        if (!ok)
+            break;
 
-            if (mstartId + bufferSize > spaceFlatSize)
-                bufferSize = spaceFlatSize - mstartId;
+        if (mstartId + bufferSize > spaceFlatSize)
+            bufferSize = spaceFlatSize - mstartId;
 
-            callback(mstartId, bufferSize);
-        }
-
-        return ok;
+        onDone(mstartId, bufferSize);
     }
 
-    if (target == CalculateTarget::Model)
-        return OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
-
-    return OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
+    return ok;
 }

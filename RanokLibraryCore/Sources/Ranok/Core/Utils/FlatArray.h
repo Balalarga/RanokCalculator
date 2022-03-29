@@ -38,7 +38,7 @@ public:
         _data.resize(dataSize);
     }
 
-    void Resize(size_t size)
+    inline void Resize(size_t size)
     {
         _data.resize(size);
     }
@@ -51,7 +51,7 @@ public:
             _data.clear();
     }
 
-    inline long Size() const { return _data.size(); }
+    inline size_t Size() const { return _data.size(); }
     inline const unsigned& GetDimension(size_t id) { return _dimensions[id]; }
     inline std::vector<unsigned>& GetDimensions() { return _dimensions; }
 
@@ -70,12 +70,18 @@ public:
         if (count > _data.size())
             return false;
 
-        size_t dimsCount = _dimensions.size();
-        stream.write((char*)&dimsCount, sizeof(dimsCount));
-        stream.write((char*)&_dimensions[0], dimsCount * sizeof(_dimensions[0]));
-
-        stream.write((char*)&count, sizeof(count));
         stream.write((char*)&_data[0], count * sizeof(_data[0]));
+
+        return true;
+    }
+
+    /// Reading count items from stream without metasize
+    bool ReadSome(std::ifstream& stream, size_t count)
+    {
+        if (count > _data.size())
+            return false;
+
+        stream.read((char*)&_data[0], count * sizeof(_data[0]));
 
         return true;
     }

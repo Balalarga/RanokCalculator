@@ -202,8 +202,8 @@ public:
     bool Calculate(CalculateTarget target,
                    Program& program,
                    const Space& space,
-                   size_t batchSize = 0,
-                   const std::function<void(size_t, size_t)>& callback = nullptr);
+                   const std::function<void(size_t, size_t)>& onDone,
+                   size_t batchSize = 0);
 
     inline const CalculateTarget& GetLastTarget() { return _lastTarget; }
     inline FlatArray<char>& GetModel() { return _modelBuffer; }

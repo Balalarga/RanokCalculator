@@ -12,7 +12,7 @@ public:
 
     Space(const std::vector<double> &centerPoint,
           const std::vector<double> &size,
-          const unsigned& recursiveDepth)
+          const size_t& recursiveDepth)
     {
         assert(centerPoint.size() == size.size());
 
@@ -25,7 +25,7 @@ public:
 
     Space(const std::vector<double> &centerPoint,
           const std::vector<double> &size,
-          const std::vector<unsigned> partition)
+          const std::vector<size_t> partition)
     {
         assert(centerPoint.size() == size.size());
         assert(partition.size() == size.size());
@@ -43,7 +43,7 @@ public:
 
     inline const std::vector<double>& GetSize() const { return _size; }
     inline const std::vector<double>& GetCentral() const { return _centerPoint; }
-    inline const std::vector<unsigned>& GetPartition() const { return _partition; }
+    inline const std::vector<size_t>& GetPartition() const { return _partition; }
     inline const std::vector<double>& GetStartPoint() const { return _startPoint; }
     inline size_t GetTotalPartition() const
     {
@@ -64,12 +64,21 @@ public:
         return unitSizes;
     }
 
+    std::vector<float> GetPoint(size_t id)
+    {
+        auto unitSize = GetUnitSize();
+        std::vector<float> point(3);
+        point[0] = _startPoint[0] + unitSize[0] * (id / ( _partition[2] * _partition[1] ));
+        point[1] = _startPoint[1] + unitSize[1] * ((id / _partition[2] ) % _partition[1]);
+        point[2] = _startPoint[2] + unitSize[2] * (id % _partition[2]);
+        return point;
+    }
 
-    void SetPartition(const std::vector<unsigned>& partition)
+    void SetPartition(const std::vector<size_t>& partition)
     {
         _partition = partition;
     }
-    void SetPartition(const unsigned& partition)
+    void SetPartition(const size_t& partition)
     {
         _partition = { partition, partition, partition };
     }
@@ -91,18 +100,17 @@ public:
 
     friend std::ofstream& operator << (std::ofstream &stream, Space& space)
     {
-        unsigned dims = space._size.size();
+        size_t dims = space._size.size();
         stream.write((char*)&dims, sizeof(dims));
-        stream.write((char*)&space._size, sizeof(space._size[0]) * space._size.size());
-        stream.write((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * space._centerPoint.size());
-        stream.write((char*)&space._startPoint, sizeof(space._startPoint[0]) * space._startPoint.size());
-        stream.write((char*)&space._partition, sizeof(space._partition[0]) * space._partition.size());
+        stream.write((char*)space._size.data(), sizeof(space._size[0]) * space._size.size());
+        stream.write((char*)space._centerPoint.data(), sizeof(space._centerPoint[0]) * space._centerPoint.size());
+        stream.write((char*)space._partition.data(), sizeof(space._partition[0]) * space._partition.size());
         return stream;
     }
 
     friend std::ifstream& operator >> (std::ifstream& stream, Space &space)
     {
-        unsigned dims;
+        size_t dims;
         stream.read((char*)&dims, sizeof(dims));
 
         space._size.resize(dims);
@@ -110,10 +118,10 @@ public:
         space._startPoint.resize(dims);
         space._partition.resize(dims);
 
-        stream.read((char*)&space._size, sizeof(space._size[0]) * dims);
-        stream.read((char*)&space._centerPoint, sizeof(space._centerPoint[0]) * dims);
-        stream.read((char*)&space._startPoint, sizeof(space._startPoint[0]) * dims);
-        stream.read((char*)&space._partition, sizeof(space._partition[0]) * dims);
+        stream.read((char*)space._size.data(), sizeof(space._size[0]) * dims);
+        stream.read((char*)space._centerPoint.data(), sizeof(space._centerPoint[0]) * dims);
+        stream.read((char*)space._partition.data(), sizeof(space._partition[0]) * dims);
+        space.UpdateStartPoint();
 
         return stream;
     }
@@ -139,5 +147,5 @@ private:
     std::vector<double> _size;
     std::vector<double> _centerPoint;
     std::vector<double> _startPoint;
-    std::vector<unsigned> _partition;
+    std::vector<size_t> _partition;
 };
