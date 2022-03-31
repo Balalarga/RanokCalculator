@@ -2,4 +2,8 @@ ARGUMENT X(1.1),Y(1.1),Z(1.1);
 
 VARIABLE W = 1 - X*X - Y*Y - Z*Z;
 
-RETURN W;
+s = cut(W, X, -0.5, 0.5);
+s1 = cut(s, Z, -0.5, 0.5);
+
+RETURN s1;
+
