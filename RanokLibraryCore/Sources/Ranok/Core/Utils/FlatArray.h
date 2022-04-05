@@ -15,20 +15,20 @@ public:
     {
     }
 
-    FlatArray(const std::vector<unsigned> &dims):
+    FlatArray(const std::vector<size_t> &dims):
         _dimensions(dims)
     {
         Resize(dims);
     }
 
-    FlatArray(const std::vector<unsigned>& dims, float initValue):
+    FlatArray(const std::vector<size_t>& dims, float initValue):
         FlatArray<Type>(dims)
     {
         for (auto &i : _data)
             i = initValue;
     }
     
-    void Resize(const std::vector<unsigned>& dims)
+    void Resize(const std::vector<size_t>& dims)
     {
         _dimensions = dims;
         long dataSize = 1;
@@ -43,7 +43,7 @@ public:
         _data.resize(size);
     }
 
-    void Clear(const std::vector<unsigned>& dims = {})
+    void Clear(const std::vector<size_t>& dims = {})
     {
         if (!dims.empty())
             Resize(dims);
@@ -52,11 +52,11 @@ public:
     }
 
     inline size_t Size() const { return _data.size(); }
-    inline const unsigned& GetDimension(size_t id) { return _dimensions[id]; }
-    inline std::vector<unsigned>& GetDimensions() { return _dimensions; }
+    inline const size_t& GetDimension(size_t id) { return _dimensions[id]; }
+    inline std::vector<size_t>& GetDimensions() { return _dimensions; }
 
     inline Type& operator[](size_t id) { return _data[id]; }
-    Type& operator[](std::vector<unsigned> &ids)
+    Type& operator[](std::vector<size_t> &ids)
     {
         long id = 0;
         for (size_t i = 1; i < ids.size(); ++i)
@@ -93,7 +93,7 @@ public:
 
 
 private:
-    std::vector<unsigned> _dimensions;
+    std::vector<size_t> _dimensions;
     std::vector<Type> _data;
 };
 

@@ -207,7 +207,7 @@ public:
 
     inline const CalculateTarget& GetLastTarget() { return _lastTarget; }
     inline FlatArray<char>& GetModel() { return _modelBuffer; }
-    inline FlatArray<std::vector<double>>& GetImage() { return _imageBuffer; }
+    inline FlatArray<std::array<double, 5>>& GetImage() { return _imageBuffer; }
 
 
 protected:
@@ -239,7 +239,7 @@ private:
     Program* _program;
     CalculateTarget _lastTarget;
     FlatArray<char> _modelBuffer;
-    FlatArray<std::vector<double>> _imageBuffer;
+    FlatArray<std::array<double, 5>> _imageBuffer;
 };
 
 

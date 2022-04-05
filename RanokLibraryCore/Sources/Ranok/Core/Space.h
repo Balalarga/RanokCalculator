@@ -64,7 +64,7 @@ public:
         return unitSizes;
     }
 
-    std::vector<float> GetPoint(size_t id)
+    std::vector<float> GetPoint(size_t id) const
     {
         auto unitSize = GetUnitSize();
         std::vector<float> point(3);

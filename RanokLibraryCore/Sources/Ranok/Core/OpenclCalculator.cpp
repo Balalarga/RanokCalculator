@@ -190,7 +190,9 @@ bool OpenclCalculator::Calculate(CalculateTarget target,
 
     // TODO: make opencl program "templated" for other dimensions
     cl_int startId = 0;
-    cl_uint3 spaceSize = {space.GetPartition()[0], space.GetPartition()[1], space.GetPartition()[2]};
+    cl_uint3 spaceSize = {static_cast<unsigned>(space.GetPartition()[0]),
+                          static_cast<unsigned>(space.GetPartition()[1]),
+                          static_cast<unsigned>(space.GetPartition()[2])};
     cl_double3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
     cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
     cl_double3 halfSize = {pointSize.x / 2.f, pointSize.y / 2.f, pointSize.z / 2.f};
