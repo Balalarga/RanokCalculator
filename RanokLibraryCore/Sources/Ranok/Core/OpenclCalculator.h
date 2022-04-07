@@ -188,6 +188,10 @@ enum class CalculateTarget: uint8_t
     Image
 };
 
+struct MImage3D
+{
+    double C0, C1, C2, C3, C4;
+};
 
 class OpenclCalculator
 {
@@ -207,7 +211,7 @@ public:
 
     inline const CalculateTarget& GetLastTarget() { return _lastTarget; }
     inline FlatArray<char>& GetModel() { return _modelBuffer; }
-    inline FlatArray<std::array<double, 5>>& GetImage() { return _imageBuffer; }
+    inline FlatArray<MImage3D>& GetImage() { return _imageBuffer; }
 
 
 protected:
@@ -239,7 +243,7 @@ private:
     Program* _program;
     CalculateTarget _lastTarget;
     FlatArray<char> _modelBuffer;
-    FlatArray<std::array<double, 5>> _imageBuffer;
+    FlatArray<MImage3D> _imageBuffer;
 };
 
 

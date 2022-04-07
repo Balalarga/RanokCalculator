@@ -188,7 +188,6 @@ bool OpenclCalculator::Calculate(CalculateTarget target,
             return false;
     }
 
-    // TODO: make opencl program "templated" for other dimensions
     cl_int startId = 0;
     cl_uint3 spaceSize = {static_cast<unsigned>(space.GetPartition()[0]),
                           static_cast<unsigned>(space.GetPartition()[1]),
@@ -210,6 +209,8 @@ bool OpenclCalculator::Calculate(CalculateTarget target,
     {
         _modelBuffer.Clear();
         _imageBuffer.Resize(bufferSize);
+        for (size_t i = 0; i < bufferSize; ++i)
+            _imageBuffer[i] = {0, 0, 0, 0, 0};
     }
 
     /*

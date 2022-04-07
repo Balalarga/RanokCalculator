@@ -20,6 +20,7 @@ struct OpenclDeviceData
     cl_uint          localGroupSize = 0;
 };
 
+#include <iostream>
 struct KernelArguments
 {
     struct Item
@@ -29,7 +30,10 @@ struct KernelArguments
             size(size),
             count(count) {}
 
-        size_t TotalSize() const { return size * count; }
+        size_t TotalSize() const {
+            std::cout << "Total size:" <<size * count<<"\n";
+            return size * count;
+        }
 
         void* const ref;
         const size_t size;

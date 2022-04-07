@@ -1,6 +1,6 @@
 #pragma once
-
-#include <glm.hpp>
+#include <assert.h>
+#include <cmath>
 #include <vector>
 #include <fstream>
 
@@ -102,9 +102,9 @@ public:
     {
         size_t dims = space._size.size();
         stream.write((char*)&dims, sizeof(dims));
-        stream.write((char*)space._size.data(), sizeof(space._size[0]) * space._size.size());
-        stream.write((char*)space._centerPoint.data(), sizeof(space._centerPoint[0]) * space._centerPoint.size());
-        stream.write((char*)space._partition.data(), sizeof(space._partition[0]) * space._partition.size());
+        stream.write((char*)&space._size[0], sizeof(space._size[0]) * space._size.size());
+        stream.write((char*)&space._centerPoint[0], sizeof(space._centerPoint[0]) * space._centerPoint.size());
+        stream.write((char*)&space._partition[0], sizeof(space._partition[0]) * space._partition.size());
         return stream;
     }
 
@@ -118,9 +118,9 @@ public:
         space._startPoint.resize(dims);
         space._partition.resize(dims);
 
-        stream.read((char*)space._size.data(), sizeof(space._size[0]) * dims);
-        stream.read((char*)space._centerPoint.data(), sizeof(space._centerPoint[0]) * dims);
-        stream.read((char*)space._partition.data(), sizeof(space._partition[0]) * dims);
+        stream.read((char*)&space._size[0], sizeof(space._size[0]) * dims);
+        stream.read((char*)&space._centerPoint[0], sizeof(space._centerPoint[0]) * dims);
+        stream.read((char*)&space._partition[0], sizeof(space._partition[0]) * dims);
         space.UpdateStartPoint();
 
         return stream;
