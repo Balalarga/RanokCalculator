@@ -1,10 +1,9 @@
 arg x(3), y(5), z(3);
 
-const r = 5;
-const z0 = r;
+r = 5;
+z0 = r;
 
 var sphere = r^2 - x^2 - y^2 - (z0 - z)^2;
-
 
 // Треугольник
 const x1=-2, y1=0, x2=2, y2=0, x3=0, y3=4;

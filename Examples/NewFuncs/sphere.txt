@@ -1,9 +1,9 @@
-ARGUMENT X(1.1),Y(1.1),Z(1.1);
+args X(1.1), Y(1.1), Z(1.1);
 
-VARIABLE W = 1 - X*X - Y*Y - Z*Z;
+var W = 1 - X*X - Y*Y - Z*Z;
 
-s = cut(W, X, -0.5, 0.5);
-s1 = cut(s, Z, -0.5, 0.5);
+s = Cut(W, X, -0.5, 0.5);
+s1 = Cut(s, Z, -0.5, 0.5);
 
-RETURN s1;
+return s1;
 
