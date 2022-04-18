@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(PROJECT_NAME RanokCoreApp)
+set(PROJECT_NAME RanokCalculatorApp)
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 
@@ -12,5 +12,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-add_subdirectory(RanokLibraryCore RanokLibraryCore)
+add_subdirectory(RanokCalculator RanokCalculator)
 add_subdirectory(App App)

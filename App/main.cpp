@@ -92,7 +92,7 @@ int main(int argc, char** argv)
             output << calculator.GetImage();
     };
 
-    if (!calculator.Calculate(target, program, space, batchSize, callback))
+    if (!calculator.Calculate(target, program, space, callback, batchSize))
         return NextErrorCode("Calculate failure");
 
     output.close();
