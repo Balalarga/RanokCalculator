@@ -8,7 +8,8 @@ std::string OpenclCalculator::imageFunctionName = "__calculateMImage";
 CodeGenerator::LanguageDefinition OpenclCalculator::languageDefenition =
         CodeGenerator::LanguageDefinition()
         .Functions({{"abs", "fabs"}})
-        .MainFuncName("__resultFunc");
+        .MainFuncName("__resultFunc")
+        .ArrayInitialization("{{{2}}}");
 
 std::string OpenclCalculator::codeHeader = R"(
 double __matrix4x4Det(double* m, int n)
