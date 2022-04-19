@@ -9,7 +9,22 @@ CodeGenerator::LanguageDefinition OpenclCalculator::languageDefenition =
         CodeGenerator::LanguageDefinition()
         .Functions({{"abs", "fabs"}})
         .MainFuncName("__resultFunc")
-        .ArrayInitialization("{{{2}}}");
+        .ArrayInitialization("{{{2}}}")
+        .ArrayReturnAsParam(true)
+        .NumberArrayType("float*")
+        .FillResultArray([](const std::string& varName, const std::vector<std::string>& params) -> std::string
+        {
+            std::stringstream stream;
+
+            for (size_t i = 0; i < params.size(); ++i)
+            {
+                stream << varName << "[" << i << "]" << " = " << params[i];
+                if (i + 1 < params.size())
+                    stream << ";\n";
+            }
+
+            return stream.str();
+        });
 
 std::string OpenclCalculator::codeHeader = R"(
 double __matrix4x4Det(double* m, int n)

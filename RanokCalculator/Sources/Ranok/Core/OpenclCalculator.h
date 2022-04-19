@@ -220,6 +220,7 @@ protected:
         std::stringstream codeStream;
 
         codeStream << codeHeader;
+        std::cout << _codeGenerator.Generate(program) << std::endl;
         codeStream << _codeGenerator.Generate(program);
         codeStream << codeFooter;
 
