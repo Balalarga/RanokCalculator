@@ -68,14 +68,22 @@ kernel void __calcualteModel(global char *resultZones,
 
 
     double values[8];
-    values[0] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z);
-    values[1] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z);
-    values[2] = __resultFunc(point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z);
-    values[3] = __resultFunc(point.x+halfSize.x, point.y-halfSize.y, point.z-halfSize.z);
-    values[4] = __resultFunc(point.x-halfSize.x, point.y+halfSize.y, point.z+halfSize.z);
-    values[5] = __resultFunc(point.x-halfSize.x, point.y+halfSize.y, point.z-halfSize.z);
-    values[6] = __resultFunc(point.x-halfSize.x, point.y-halfSize.y, point.z+halfSize.z);
-    values[7] = __resultFunc(point.x-halfSize.x, point.y-halfSize.y, point.z-halfSize.z);
+    double params1[3] = {point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z};
+    values[0] = __resultFunc(params1);
+    double params2[3] = {point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z};
+    values[1] = __resultFunc(params2);
+    double params3[3] = {point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z};
+    values[2] = __resultFunc(params3);
+    double params4[3] = {point.x+halfSize.x, point.y-halfSize.y, point.z-halfSize.z};
+    values[3] = __resultFunc(params4);
+    double params5[3] = {point.x-halfSize.x, point.y+halfSize.y, point.z+halfSize.z};
+    values[4] = __resultFunc(params5);
+    double params6[3] = {point.x-halfSize.x, point.y+halfSize.y, point.z-halfSize.z};
+    values[5] = __resultFunc(params6);
+    double params7[3] = {point.x-halfSize.x, point.y-halfSize.y, point.z+halfSize.z};
+    values[6] = __resultFunc(params7);
+    double params8[3] = {point.x-halfSize.x, point.y-halfSize.y, point.z-halfSize.z};
+    values[7] = __resultFunc(params8);
 
     resultZones[id] = __checkZone8(values);
 }
@@ -95,10 +103,14 @@ kernel void __calculateMImage(global double *result,
     point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
     double wv[4];
-    wv[0] = __resultFunc(point.x,             point.y,             point.z            );
-    wv[1] = __resultFunc(point.x+pointSize.x, point.y,             point.z            );
-    wv[2] = __resultFunc(point.x,             point.y+pointSize.y, point.z            );
-    wv[3] = __resultFunc(point.x,             point.y,             point.z+pointSize.z);
+    double params1[3] = {point.x, point.y, point.z };
+    wv[0] = __resultFunc(params1);
+    double params2[3] = {point.x+pointSize.x, point.y, point.z };
+    wv[1] = __resultFunc(params2);
+    double params3[3] = {point.x, point.y + pointSize.y, point.z };
+    wv[2] = __resultFunc(params3);
+    double params4[3] = {point.x, point.y, point.z + pointSize.z};
+    wv[3] = __resultFunc(params4);
 
     double a[] = {
         point.y,             point.z,             wv[0], 1,
