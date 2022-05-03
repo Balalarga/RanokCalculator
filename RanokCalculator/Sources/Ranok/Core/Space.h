@@ -5,6 +5,12 @@
 #include <fstream>
 
 
+typedef struct __attribute__ ((packed)) _MImage3D
+{
+    double C0, C1, C2, C3, C4;
+    char zone;
+} MImage3D;
+
 class Space
 {
 public:
