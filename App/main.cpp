@@ -69,7 +69,14 @@ int main(int argc, char** argv)
     Program program = parser.Parse(Lexer::CreateFrom(code));
     auto args = program.Table().Arguments();
 
-    Space space({0, 0, 0}, {args[0]->range.max, args[1]->range.max, args[2]->range.max}, recursiveDepth);
+
+    glm::vec3 spaceSize;
+    if (dynamic_cast<ArrayExpression*>(args[0]->child.get()))
+        spaceSize = {program.Table().Ranges()[0][0].max, program.Table().Ranges()[0][1].max, program.Table().Ranges()[0][2].max};
+    else
+        spaceSize = {program.Table().Ranges()[0][0].max, program.Table().Ranges()[1][0].max, program.Table().Ranges()[2][0].max};
+
+    Space space({0, 0, 0}, {spaceSize.x, spaceSize.y, spaceSize.z}, recursiveDepth);
     OpenclCalculator calculator;
 
 

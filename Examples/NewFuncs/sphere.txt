@@ -1,9 +1,5 @@
-args X(1.1), Y(1.1), Z(1.1);
+args s[3];
 
-var W = 1 - X*X - Y*Y - Z*Z;
+w = 1 - s[0]^2 - s[1]^2 - s[2]^2;
 
-s = Cut(W, X, -0.5, 0.5);
-s1 = Cut(s, Z, -0.5, 0.5);
-
-return s1;
-
+return w;

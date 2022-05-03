@@ -8,9 +8,32 @@ std::string OpenclCalculator::imageFunctionName = "__calculateMImage";
 CodeGenerator::LanguageDefinition OpenclCalculator::languageDefenition =
         CodeGenerator::LanguageDefinition()
         .Functions({{"abs", "fabs"}})
-        .MainFuncName("__resultFunc");
+        .MainFuncName("__resultFunc")
+        .ArrayInitialization("{{{2}}}")
+        .ArrayReturnAsParam(true)
+        .NumberArrayType("double*")
+        .FillResultArray([](const std::string& varName, const std::vector<std::string>& params) -> std::string
+        {
+            std::stringstream stream;
+
+            for (size_t i = 0; i < params.size(); ++i)
+            {
+                stream << varName << "[" << i << "]" << " = " << params[i];
+                if (i + 1 < params.size())
+                    stream << ";\n";
+            }
+
+            return stream.str();
+        });
 
 std::string OpenclCalculator::codeHeader = R"(
+
+typedef struct __attribute__ ((packed)) _MImageData
+{
+    double c[5];
+    char zone;
+} MImageData;
+
 double __matrix4x4Det(double* m, int n)
 {
       return
@@ -51,35 +74,7 @@ char __checkZone8(double *values)
 )";
 
 std::string OpenclCalculator::codeFooter = R"(
-kernel void __calcualteModel(global char *resultZones,
-                           const int startId,
-                           const uint3 spaceSize,
-                           const double3 startPoint,
-                           const double3 pointSize,
-                           const double3 halfSize)
-{
-    int id = get_global_id(0);
-    int spaceId = startId + id;
-    double3 point;
-    point.x = startPoint.x + pointSize.x * (spaceId / ( spaceSize.z * spaceSize.y ));
-    point.y = startPoint.y + pointSize.y * ((spaceId / spaceSize.z ) % spaceSize.y);
-    point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
-
-
-    double values[8];
-    values[0] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z);
-    values[1] = __resultFunc(point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z);
-    values[2] = __resultFunc(point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z);
-    values[3] = __resultFunc(point.x+halfSize.x, point.y-halfSize.y, point.z-halfSize.z);
-    values[4] = __resultFunc(point.x-halfSize.x, point.y+halfSize.y, point.z+halfSize.z);
-    values[5] = __resultFunc(point.x-halfSize.x, point.y+halfSize.y, point.z-halfSize.z);
-    values[6] = __resultFunc(point.x-halfSize.x, point.y-halfSize.y, point.z+halfSize.z);
-    values[7] = __resultFunc(point.x-halfSize.x, point.y-halfSize.y, point.z-halfSize.z);
-
-    resultZones[id] = __checkZone8(values);
-}
-
-kernel void __calculateMImage(global double *result,
+kernel void __calculateMImage(global MImageData *result,
                            const int startId,
                            const uint3 spaceSize,
                            const double3 startPoint,
@@ -94,10 +89,14 @@ kernel void __calculateMImage(global double *result,
     point.z = startPoint.z + pointSize.z * (spaceId % spaceSize.z);
 
     double wv[4];
-    wv[0] = __resultFunc(point.x,             point.y,             point.z            );
-    wv[1] = __resultFunc(point.x+pointSize.x, point.y,             point.z            );
-    wv[2] = __resultFunc(point.x,             point.y+pointSize.y, point.z            );
-    wv[3] = __resultFunc(point.x,             point.y,             point.z+pointSize.z);
+    double params1[3] = {point.x, point.y, point.z };
+    wv[0] = __resultFunc(params1);
+    double params2[3] = {point.x+pointSize.x, point.y, point.z };
+    wv[1] = __resultFunc(params2);
+    double params3[3] = {point.x, point.y + pointSize.y, point.z };
+    wv[2] = __resultFunc(params3);
+    double params4[3] = {point.x, point.y, point.z + pointSize.z};
+    wv[3] = __resultFunc(params4);
 
     double a[] = {
         point.y,             point.z,             wv[0], 1,
@@ -136,11 +135,31 @@ kernel void __calculateMImage(global double *result,
     double detF = __matrix4x4Det(f, 4);
     double div = sqrt(pow(detA, 2)+pow(detB, 2)+pow(detC, 2)+pow(detD, 2)+pow(detF, 2));
 
-    result[id*5  ] = detA/div;
-    result[id*5+1] = -detB/div;
-    result[id*5+2] = -detC/div;
-    result[id*5+3] = detD/div;
-    result[id*5+4] = detF/div;
+    result[id].c[0] = detA/div;
+    result[id].c[1] = -detB/div;
+    result[id].c[2] = -detC/div;
+    result[id].c[3] = detD/div;
+    result[id].c[4] = detF/div;
+
+
+    double values[8];
+    double zoneParams1[3] = {point.x+halfSize.x, point.y+halfSize.y, point.z+halfSize.z};
+    values[0] = __resultFunc(zoneParams1);
+    double zoneParams2[3] = {point.x+halfSize.x, point.y+halfSize.y, point.z-halfSize.z};
+    values[1] = __resultFunc(zoneParams2);
+    double zoneParams3[3] = {point.x+halfSize.x, point.y-halfSize.y, point.z+halfSize.z};
+    values[2] = __resultFunc(zoneParams3);
+    double zoneParams4[3] = {point.x+halfSize.x, point.y-halfSize.y, point.z-halfSize.z};
+    values[3] = __resultFunc(zoneParams4);
+    double zoneParams5[3] = {point.x-halfSize.x, point.y+halfSize.y, point.z+halfSize.z};
+    values[4] = __resultFunc(zoneParams5);
+    double zoneParams6[3] = {point.x-halfSize.x, point.y+halfSize.y, point.z-halfSize.z};
+    values[5] = __resultFunc(zoneParams6);
+    double zoneParams7[3] = {point.x-halfSize.x, point.y-halfSize.y, point.z+halfSize.z};
+    values[6] = __resultFunc(zoneParams7);
+    double zoneParams8[3] = {point.x-halfSize.x, point.y-halfSize.y, point.z-halfSize.z};
+    values[7] = __resultFunc(zoneParams8);
+    result[id].zone = __checkZone8(values);
 }
 )";
 
@@ -172,14 +191,11 @@ void OpenclCalculator::SetImageGradient(const LinearGradient &imageGradient)
     _imageGradient = imageGradient;
 }
 
-bool OpenclCalculator::Calculate(CalculateTarget target,
-                                 Program &program,
+bool OpenclCalculator::Calculate(Program &program,
                                  const Space &space,
                                  const std::function<void (size_t, size_t)> &onDone,
                                  size_t batchSize)
 {
-    _lastTarget = target;
-
     if (_program != &program)
     {
         GenerateCode(program);
@@ -200,21 +216,12 @@ bool OpenclCalculator::Calculate(CalculateTarget target,
     if (batchSize != 0 && batchSize < bufferSize)
         bufferSize = batchSize;
 
-    if (target == CalculateTarget::Model)
-    {
-        _imageBuffer.Clear();
-        _modelBuffer.Resize(bufferSize);
-    }
-    else if (target == CalculateTarget::Image)
-    {
-        _modelBuffer.Clear();
-        _imageBuffer.Resize(bufferSize);
-        for (size_t i = 0; i < bufferSize; ++i)
-            _imageBuffer[i] = {0, 0, 0, 0, 0};
-    }
+    _imageBuffer.Resize(bufferSize);
+    for (size_t i = 0; i < bufferSize; ++i)
+        _imageBuffer[i] = {0, 0, 0, 0, 0};
 
     /*
-       global char *resultZones,
+       global MImageData *resultZones,
        const int startId,
        const uint3 spaceSize,
        const double3 startPoint,
@@ -230,16 +237,12 @@ bool OpenclCalculator::Calculate(CalculateTarget target,
         {&halfSize, sizeof(cl_double3)},
     };
 
-    KernelArguments::Item modelOutput(&_modelBuffer[0], sizeof(char), _modelBuffer.Size());
     KernelArguments::Item imageOutput(&_imageBuffer[0], sizeof(_imageBuffer[0]), _imageBuffer.Size());
     bool ok = false;
     size_t spaceFlatSize = space.GetTotalPartition();
     for (size_t mstartId = 0; mstartId < spaceFlatSize; mstartId += bufferSize)
     {
-        if (target == CalculateTarget::Model)
-            ok = OpenclSystem::Get().Run(modelFunctionName, KernelArguments(modelOutput, optional));
-        else
-            ok = OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
+        ok = OpenclSystem::Get().Run(imageFunctionName, KernelArguments(imageOutput, optional));
 
         if (!ok)
             break;

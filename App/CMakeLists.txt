@@ -14,5 +14,5 @@ file(GLOB_RECURSE EXAMPLES ../Examples/*.txt)
 add_executable(${PROJECT_NAME} main.cpp ${EXAMPLES})
 
 
-target_link_libraries (${PROJECT_NAME} LINK_PUBLIC RanokLibraryCore)
-target_include_directories(${PROJECT_NAME} PUBLIC RanokLibraryCore)
+target_link_libraries (${PROJECT_NAME} LINK_PUBLIC RanokCalculator)
+target_include_directories(${PROJECT_NAME} PUBLIC RanokCalculator)
