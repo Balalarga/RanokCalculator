@@ -28,12 +28,11 @@ CodeGenerator::LanguageDefinition OpenclCalculator::languageDefenition =
 
 std::string OpenclCalculator::codeHeader = R"(
 
-typedef struct __attribute__ ((packed)) _MImageData
+struct __attribute__ ((packed)) MImage3D
 {
     double c[5];
     char zone;
-} MImageData;
-
+};
 double __matrix4x4Det(double* m, int n)
 {
       return
@@ -74,7 +73,7 @@ char __checkZone8(double *values)
 )";
 
 std::string OpenclCalculator::codeFooter = R"(
-kernel void __calculateMImage(global MImageData *result,
+kernel void __calculateMImage(global struct MImage3D *result,
                            const int startId,
                            const uint3 spaceSize,
                            const double3 startPoint,
