@@ -2,10 +2,11 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <cmath>
 
-#include <Ranok/Core/OpenclCalculator.h>
+#include <Ranok/OpenCL/OpenclSystem.h>
 #include <Ranok/LanguageCore/Parser.h>
+
+#include "Ranok/OpenCL/OpenclCalculator.h"
 
 using namespace std;
 
@@ -39,10 +40,6 @@ int main(int argc, char** argv)
     if (argc >= 2)
         codePath = argv[2];
     
-    CalculateTarget target = CalculateTarget::Model;
-    if (argc >= 3 && CharToLower(argv[3]) == "image")
-        target = CalculateTarget::Image;
-
     string outputFilepath = "output";
     if (argc >= 4)
         outputFilepath = argv[4];
@@ -84,22 +81,16 @@ int main(int argc, char** argv)
         batchSize = space.GetTotalPartition();
 
     ofstream output;
-    if (target == CalculateTarget::Model)
-        output.open(outputFilepath + ".mbin");
-    else
-        output.open(outputFilepath + ".ibin");
+    output.open(outputFilepath + ".mbin");
 
     output << space << "\n";
-    auto callback = [&output, &calculator, target, spaceSize = space.GetTotalPartition()](unsigned start, unsigned count)
+    auto callback = [&output, &calculator, spaceSize = space.GetTotalPartition()](unsigned start, unsigned count)
     {
         cout << "Done " << 100*(start + count)/(float)spaceSize << "% (" << (start + count) << "/" << spaceSize << ")\n";
-        if (target == CalculateTarget::Model)
-            output << calculator.GetModel();
-        else
-            output << calculator.GetImage();
+        output << calculator.GetImage();
     };
 
-    if (!calculator.Calculate(target, program, space, callback, batchSize))
+    if (!calculator.Calculate(program, space, callback, batchSize))
         return NextErrorCode("Calculate failure");
 
     output.close();
